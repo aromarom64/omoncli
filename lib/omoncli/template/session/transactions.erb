@@ -1,0 +1,29 @@
+<%= render 'template/header.erb' %>
+
+col username for A20 tru
+col inst_id for 9 heading 'Id'
+col sid for 9999 heading 'Sid'
+col serial# for 99999 heading 'Serial'
+col spid for A5 heading 'Spid'
+col osuser for a10 heading 'Osuser'
+col program for a35 heading 'Program'
+col terminal for a10 heading 'Terminal'
+col logon_time for A10 heading 'Start|time'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select t.inst_id,
+t.start_time,
+s.username,
+s.osuser,
+s.program,
+s.sid,
+s.serial#,
+p.spid
+from gv$transaction t, gv$session s, gv$process p
+where t.ses_addr = s.saddr and s.paddr = p.addr
+/
+
+<%= render 'template/footer.erb' %>

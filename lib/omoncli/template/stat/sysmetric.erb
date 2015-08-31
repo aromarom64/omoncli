@@ -1,0 +1,32 @@
+<%= render 'template/header.erb' %>
+
+col inst_id for 9 heading 'In|id'
+col begin_time for A19 heading 'Begin|Time'
+col end_time for A19 heading 'End|Time'
+col metric_name for A40 heading 'Metric|Name'
+col value heading 'Value'
+col metric_unit for A30 heading 'Metric|Unit'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+prompt Metric: <%= @metric%>
+
+<% if @metric == 'all' %>
+select inst_id, begin_time, end_time, metric_name, value, metric_unit
+from gv$sysmetric where intsize_csec > 5900
+order by metric_name, inst_id
+/
+<% elsif @metric == 'throughput' %>
+select inst_id, begin_time, metric_name, value, metric_unit
+from gv$sysmetric where intsize_csec > 5900
+and metric_name in ('Logons Per Sec', 'Logons Per Txn', 'Physical Reads Per Sec',
+'Physical Reads Per Txn', 'Redo Generated Per Sec', 'Redo Generated Per Txn', 'User Transaction Per Sec')
+order by metric_name, inst_id
+/
+<% end %>
+
+
+<%= render 'template/footer.erb' %>

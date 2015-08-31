@@ -1,0 +1,21 @@
+<%= render 'template/header.erb' %>
+
+variable vsqlh varchar2(64);
+variable vplnam varchar2(64);
+begin
+  :vsqlh := <%= if @sql_handle then "'#{@sql_handle}'" else 'null' end %>;
+  :vplnam := <%= if @plan_name then "'#{@plan_name}'" else 'null' end %>;
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+select * from table(dbms_xplan.display_sql_plan_baseline(:vsqlh,:vplnam,'<%= @format %>'))
+/
+
+<%= render 'template/footer.erb' %>

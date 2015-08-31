@@ -1,0 +1,41 @@
+<%= render 'template/header.erb' %>
+
+col username for A10
+col id for 9
+col sid for 9999
+col serial for 99999
+col s for A1 tru
+col st for A3 tru
+col osuser for a10 tru
+col resource_consumer_group for a12 heading 'resource|consumer|group'
+col service_name for a10 heading 'service|name'
+col program for a10 tru
+col event for a30 heading 'event'
+col last_call_et for 99999 heading 'last ca|ll et'
+col logon_time for A19 heading 'logon|time'
+col sql_child_number for 999 heading 'Sql|ChN'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select s.username,
+s.inst_id id,
+s.sid,
+s.serial# serial,
+substr(s.server,1,1) s,
+substr(s.status,1,3) st,
+s.osuser,
+s.last_call_et,
+s.logon_time,
+s.resource_consumer_group,
+s.service_name, s.sql_id,
+s.sql_child_number,
+s.program,
+s.event
+from GV$SESSION S
+where s.USERNAME is not null
+and s.type <> 'BACKGROUND'
+order by username, last_call_et desc;
+
+<%= render 'template/footer.erb' %>

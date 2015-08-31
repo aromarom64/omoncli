@@ -1,0 +1,31 @@
+<%= render 'template/header.erb' %>
+
+col inst_id for 9 heading 'In|id'
+col begin_time for A19 heading 'Begin|Time'
+col function_name for a20 truncated heading 'Function|Name'
+col small_read_mbps for 999999.99 heading 'Small r|ead mbps'
+col small_write_mbps for 999999.99 heading 'Small w|rite mbps'
+col large_read_mbps for 999999.99 heading 'Large r|ead mbps'
+col large_write_mbps for 999999.99 heading 'Large w|rite mbps'
+col small_read_iops for 999999.99 heading 'Small r|ead iops'
+col small_write_iops for 999999.99 heading 'Small w|rite iops'
+col large_read_iops for 999999.99 heading 'Large r|ead iops'
+col large_write_iops for 999999.99 heading 'Large w|rite iops'
+col avg_wait_time for 99.999 heading 'Avg wa|it time'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+
+select inst_id, begin_time, function_name,
+small_read_mbps, small_write_mbps,
+large_read_mbps, large_write_mbps,
+small_read_iops, small_write_iops,
+large_read_iops, large_write_iops, avg_wait_time
+from gv$iofuncmetric
+where intsize_csec > 5900 order by function_name, inst_id
+/
+
+<%= render 'template/footer.erb' %>

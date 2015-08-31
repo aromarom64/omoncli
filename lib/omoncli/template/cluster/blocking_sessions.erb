@@ -1,0 +1,127 @@
+<%= render 'template/header.erb' %>
+
+col inst_id format 9 heading 'Inst|Id'
+col sid format 99999 heading 'Sid'
+col process format A6 heading 'Spid'
+col username format A20 heading 'User|Name'
+col serial format 999999 heading 'Serial'
+col lmode format A9 heading 'Lmode'
+col request format A9 heading 'Request'
+col state format A7 heading 'State'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select g.inst_id,
+s.sid,
+g.type,
+s.username,
+s.serial# serial,
+s.process,
+decode(lmode,0,'None',1,'Null',2,'Row-S',3,'Row-X',4,'Share',5,'S/ROW',6,'Exclusive') lmode,
+decode(request,0,'None',1,'Null',2,'Row-S',3,'Row-X',4,'Share', 5,'S/ROW',6,'Exclusive')request,
+decode(request,0,'BLOCKER','WAITER') state
+from
+gv$global_blocked_locks g,
+gv$session s
+where g.sid = s.sid
+and g.inst_id = s.inst_id
+order by state
+/
+
+col inst_id format 9 heading 'Inst|Id'
+col sid format 99999 heading 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name1 heading 'Resource|Name1'
+col grant_level format A9 heading 'Grant|Level'
+col request_level format A9 heading 'Request|Level'
+col state format A9 heading 'State'
+col event format A30 heading 'Event'
+col seconds_in_wait heading 'Seconds|In Wait'
+
+prompt blocker=1
+
+SELECT
+dl.inst_id,
+s.sid,
+p.spid,
+dl.resource_name1,
+decode (substr (dl.grant_level,1,8),
+  'KJUSERNL','Null',
+  'KJUSERCR','Row-S (SS)',
+  'KJUSERCW','Row-X (SX)',
+  'KJUSERPR','Share',
+  'KJUSERPW','S/Row-X (SSX)',
+  'KJUSEREX','Exclusive',
+  request_level) as grant_level,
+decode(substr(dl.request_level,1,8),
+  'KJUSERNL','Null',
+  'KJUSERCR','Row-S (SS)',
+  'KJUSERCW','Row-X (SX)',
+  'KJUSERPR','Share',
+  'KJUSERPW','S/Row-X (SSX)',
+  'KJUSEREX','Exclusive',
+  request_level) as request_level,
+decode(substr(dl.state,1,8),
+  'KJUSERGR','Granted','KJUSEROP','Opening',
+  'KJUSERCA','Cancelling',
+  'KJUSERCV','Converting',dl.state
+) as state,
+sw.event,
+sw.seconds_in_wait
+FROM
+gv$ges_enqueue dl,
+gv$process p,
+gv$session s,
+gv$session_wait sw
+WHERE blocker = 1
+AND (dl.inst_id = p.inst_id AND dl.pid = p.spid)
+AND (p.inst_id = s.inst_id AND p.addr = s.paddr)
+AND (s.inst_id = sw.inst_id AND s.sid = sw.sid)
+ORDER BY sw.seconds_in_wait DESC;
+
+prompt BLOCKED=1
+
+SELECT
+dl.inst_id,
+s.sid,
+p.spid,
+dl.resource_name1,
+decode (substr (dl.grant_level,1,8),
+  'KJUSERNL','Null',
+  'KJUSERCR','Row-S (SS)',
+  'KJUSERCW','Row-X (SX)',
+  'KJUSERPR','Share',
+  'KJUSERPW','S/Row-X (SSX)',
+  'KJUSEREX','Exclusive',
+  request_level) as grant_level,
+decode(substr(dl.request_level,1,8),
+  'KJUSERNL','Null',
+  'KJUSERCR','Row-S (SS)',
+  'KJUSERCW','Row-X (SX)',
+  'KJUSERPR','Share',
+  'KJUSERPW','S/Row-X (SSX)',
+  'KJUSEREX','Exclusive',
+  request_level) as request_level,
+decode(substr(dl.state,1,8),
+  'KJUSERGR','Granted','KJUSEROP','Opening',
+  'KJUSERCA','Cancelling',
+  'KJUSERCV','Converting',dl.state
+) as state,
+sw.event,
+sw.seconds_in_wait sec
+FROM
+gv$ges_enqueue dl,
+gv$process p,
+gv$session s,
+gv$session_wait sw
+WHERE blocked = 1
+AND (dl.inst_id = p.inst_id AND dl.pid = p.spid)
+AND (p.inst_id = s.inst_id AND p.addr = s.paddr)
+AND (s.inst_id = sw.inst_id AND s.sid = sw.sid)
+ORDER BY sw.seconds_in_wait DESC;
+
+
+
+<%= render 'template/footer.erb' %>

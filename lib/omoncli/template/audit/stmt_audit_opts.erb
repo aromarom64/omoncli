@@ -1,0 +1,22 @@
+<%= render 'template/header.erb' %>
+
+col user_name for A10 heading 'User|Name'
+col proxy_name for A10 heading 'Proxy|Name'
+col audit_option for A30 heading 'Audit|Option'
+col success for A10 heading 'Success'
+col failure heading 'Failure'
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+select
+user_name,
+proxy_name,
+audit_option,
+success,
+failure
+from dba_stmt_audit_opts order by audit_option
+/
+
+<%= render 'template/footer.erb' %>

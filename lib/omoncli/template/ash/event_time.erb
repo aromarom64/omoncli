@@ -1,0 +1,32 @@
+<%= render 'template/header.erb' %>
+
+variable vEvent varchar2(64);
+variable vMinute number;
+begin
+  :vEvent := '<%= @event %>';
+  :vMinute:= <%= @minutes %>;
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+col event for a34
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Event: <%= @event %>
+prompt Minute: <%= @minutes %>
+
+select sql_id,
+  sql_plan_hash_value,
+  nvl(sql_plan_line_id, 0) as SQL_PLAN_LINE_ID,
+  event,
+  count(*) as WAIT_COUNT
+from gv$active_session_history
+where event = :vEvent and sample_time > sysdate - :vMinute/(24*60)
+group by sql_id, sql_plan_hash_value, sql_plan_line_id, event
+/
+
+<%= render 'template/footer.erb' %>

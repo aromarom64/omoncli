@@ -1,0 +1,10 @@
+<%= render 'template/header.erb' %>
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select * from gv$pga_target_advice order by inst_id, pga_target_factor
+/
+
+<%= render 'template/footer.erb' %>

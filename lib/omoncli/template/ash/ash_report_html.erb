@@ -1,0 +1,28 @@
+<%= render 'template/header.erb' %>
+
+define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
+variable oldest varchar2(30);
+variable latest varchar2(30);
+variable instnum number;
+variable dbid number;
+begin
+    select dbid into :dbid from v$database;
+    :instnum := <%= @instance %>;
+    :oldest := '<%= @bdate %>';
+    :latest := '<%= @edate %>';
+end;
+/
+
+set trim on trims on linesize 1500 pagesize 0 echo off termout off heading off;
+
+spool <%= @filenamespool %> append
+
+select output from table(DBMS_WORKLOAD_REPOSITORY.ASH_REPORT_HTML(
+        l_dbid         => :dbid,
+        l_inst_num     => :instnum,
+        l_btime        => to_date(:oldest, '&ash_time_format'),
+        l_etime        => to_date(:latest, '&ash_time_format')
+))
+/
+
+<%= render 'template/footer.erb' %>

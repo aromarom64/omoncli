@@ -1,0 +1,61 @@
+<%= render 'template/header.erb' %>
+
+col average_latency heading 'Average|Latency'
+col average_pin_time heading 'Average|Pin Time'
+col average_flush_time heading 'Average|Flush Time'
+col average_send_time heading 'Average|Send Time'
+col average_lms heading 'Average LMS|Service Time'
+col inst_id heading 'Inst|id'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT inst_id,
+average_latency,
+average_pin_time,
+average_flush_time,
+average_send_time,
+average_latency - average_pin_time - average_flush_time - average_send_time as average_lms
+FROM
+(
+  SELECT a.inst_id,
+  (gc_current_block_receive_time * 10) / gc_current_blocks_received
+  AS average_latency,
+  (gc_current_block_pin_time * 10) / gc_current_blocks_served
+  AS average_pin_time,
+  (gc_current_block_flush_time * 10) / gc_current_blocks_served
+  AS average_flush_time,
+  (gc_current_block_send_time * 10) / gc_current_blocks_served
+  AS average_send_time
+  FROM
+  (
+    SELECT inst_id, sum(value) AS gc_current_block_receive_time FROM gv$sysstat
+    WHERE name = 'gc current block receive time' group by inst_id
+  ) a,
+  (
+    SELECT inst_id, sum(value) AS gc_current_blocks_received FROM gv$sysstat
+    WHERE name = 'gc current blocks received' group by inst_id
+  ) b,
+  (
+    SELECT inst_id, sum(value) AS gc_current_block_pin_time FROM gv$sysstat
+    WHERE name = 'gc current block pin time' group by inst_id
+  ) c, 
+  (
+    SELECT inst_id, sum(value) AS gc_current_block_flush_time FROM gv$sysstat
+    WHERE name = 'gc current block flush time' group by inst_id
+  ) d,
+  (
+    SELECT inst_id, sum(value) AS gc_current_block_send_time FROM gv$sysstat
+    WHERE name = 'gc current block send time' group by inst_id
+  ) e,
+  (
+    SELECT inst_id, sum(value) AS gc_current_blocks_served FROM gv$sysstat
+    WHERE name = 'gc current blocks served' group by inst_id
+  ) f
+  where a.inst_id=b.inst_id and b.inst_id=c.inst_id and c.inst_id=d.inst_id 
+  and d.inst_id=e.inst_id and e.inst_id=f.inst_id
+)
+/
+
+<%= render 'template/footer.erb' %>

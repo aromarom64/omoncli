@@ -1,0 +1,32 @@
+<%= render 'template/header.erb' %>
+
+variable vSQLID varchar2(30);
+begin
+  :vSQLID := '<%= @sql_id %>';
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt sql_id: <%= @sql_id %>
+
+select inst_id,
+plan_hash_value,
+child_number,
+object_status,
+last_active_time,
+executions,
+is_obsolete,
+is_bind_sensitive,
+is_bind_aware,
+is_shareable,
+sql_plan_baseline
+from gv$sql
+where sql_id = :vSQLID
+/
+
+<%= render 'template/footer.erb' %>

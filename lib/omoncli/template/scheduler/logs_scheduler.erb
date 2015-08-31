@@ -1,0 +1,45 @@
+<%= render 'template/header.erb' %>
+
+variable vtopnumber number;
+variable vowner varchar2(30);
+variable vjobname varchar2(30);
+begin
+  :vtopnumber := <%= @topnumber %>;
+  :vowner := '<%= @owner %>';
+  :vjobname := '<%= @jobname %>';
+end;
+/
+
+col log_date for A40
+col operation for A10
+col status for A10
+col additional_info for A30
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+spool <%= @filenamespool %> append
+
+select
+log_date,
+operation,
+status
+,additional_info
+from (
+  select log_date,
+  operation,
+  status,
+  additional_info,
+  row_number() over (order by log_date) xrank
+  from dba_scheduler_job_log
+  where
+  owner = :vowner and
+  job_name = :vjobname
+)
+where xrank < :vtopnumber
+order by xrank desc
+/
+
+<%= render 'template/footer.erb' %>

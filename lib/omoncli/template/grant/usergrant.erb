@@ -1,0 +1,77 @@
+<%= render 'template/header.erb' %>
+
+variable vorauser varchar2(30);
+begin
+  :vorauser := '<%= @orauser %>';
+end;
+/
+
+col object_type format A15 heading 'Object|type'
+col grantee format A15 heading 'Grantee'
+col owner format A10 heading 'Owner'
+col table_name format A30 heading 'Table|name'
+col column_name format A20 heading 'Column|name'
+col privilege format A20 heading 'Privilege'
+col grantable format A20 heading 'Grantable'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+prompt User: <%= @orauser %>
+
+prompt Lack privileges to public role !!!!
+
+Select o.object_type, pp.*
+from   dba_objects o,
+       (Select p.grantee, p.owner, p.table_name, null column_name, p.privilege,
+p.grantable        from   dba_tab_privs p, dba_users u
+        where  p.grantee = u.username
+        UNION ALL
+        Select p.grantee, p.owner, p.table_name, p.column_name, p.privilege,
+p.grantable        from   dba_col_privs p, dba_users u
+        where  p.grantee = u.username
+        ) pp
+where o.OWNER = pp.owner
+and   o.object_name = pp.table_name
+and   o.object_type in ('TABLE', 'VIEW', 'SEQUENCE', 'PACKAGE', 'PROCEDURE',
+'FUNCTION', 'SNAPSHOT', 'MATERIALIZED VIEW', 'DIRECTORY', 'LIBRARY', 'TYPE',
+'OPERATOR', 'INDEXTYPE') and pp.grantee = :vorauser
+order by pp.grantee, pp.owner, pp.table_name, pp.column_name
+/
+
+prompt 'System privs:'
+Select * from DBA_sys_privs
+where grantee = :vorauser
+order by grantee
+/
+
+prompt 'Quota:'
+Select tablespace_name, max_bytes, username from DBA_ts_quotas
+where username = :vorauser
+order by username
+/
+
+prompt 'Roles:'
+Select * from DBA_role_privs
+where grantee = :vorauser
+order by grantee
+/
+
+select kind, grantee, type_schema, type_name, name, action, enabled, seq
+from sys.dba_java_policy
+where grantee = :vorauser
+order by seq
+/
+
+Select *
+from dba_rsrc_consumer_group_privs
+where grantee = :vorauser
+/
+
+Select *
+from dba_proxies
+where client = :vorauser
+order by client, proxy, role
+/
+
+<%= render 'template/footer.erb' %>

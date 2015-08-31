@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+
+#$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + '/../lib')
+
+require 'thor'
+require 'omoncli'
+
+module Omoncli
+
+  #  class Omonplus< Thor
+  #    include Omoncli::Sessions
+  #  end
+
+
+  class Omonplus < Thor
+
+    desc "session SUBCOMMAND ...ARGS", "my 122"
+    subcommand "session", Session
+
+    desc "ash SUBCOMMAND ...ARGS", "ash command"
+    subcommand "ash", Ash
+
+    desc "cursor SUBCOMMAND ...ARGS", "cursor command"
+    subcommand "cursor", Cursor
+
+    desc "xplan SUBCOMMAND ...ARGS", "dbms_xplan command"
+    subcommand "xplan", Xplan
+
+    desc "stat SUBCOMMAND ...ARGS", "Stat command"
+    subcommand "stat", Stat
+
+    desc "scheduler SUBCOMMAND ...ARGS", "Scheduler command"
+    subcommand "scheduler", Scheduler
+
+    desc "audit SUBCOMMAND ...ARGS", "Audit command"
+    subcommand "audit", Audit
+
+    desc "cluster SUBCOMMAND ...ARGS", "Cluster command"
+    subcommand "cluster", Cluster
+
+    desc "grant SUBCOMMAND ...ARGS", "Grant command"
+    subcommand "grant", Grant
+
+    desc "memory SUBCOMMAND ...ARGS", "Memory command"
+    subcommand "memory", Memory
+
+    desc "table SUBCOMMAND ...ARGS", "Table command"
+    subcommand "table", Table
+
+    desc "rman SUBCOMMAND ...ARGS", "Rman command"
+    subcommand "rman", Rman
+
+    desc "tablespace SUBCOMMAND ...args", "Tablespace command"
+    subcommand "tablespace", Tablespace
+
+    desc "undo SUBCOMMAND ...args", "Undo command"
+    subcommand "undo", Undo
+
+    desc "cbo SUBCOMMAND ...args", "Cbo command"
+    subcommand "cbo", Cbo
+
+    desc "conn", "Connect to Oracle Database"
+    def conn
+      obj = DialogTnsnames.new
+      obj.dialog
+      oraenv = Oraenv.new
+      oraenv.oraserv = obj.service
+      File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(oraenv, f)}
+      puts "oraservice is #{oraenv.oraserv}"
+    end
+
+    desc "showconn", "Show connect to Oracle Database"
+    def showconn
+      oraenv = Oraenv.new
+      if File.file?(Oraenv::CONFIGFILE)
+        oraenv = YAML.load(File.open(Oraenv::CONFIGFILE))
+      else
+        File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(oraenv, f)}
+      end
+
+      puts "oraservice is #{oraenv.oraserv}"
+      puts "orauser is #{oraenv.orauser}"
+    end
+
+  end
+
+end
+
+Omoncli::Omonplus.start(ARGV)

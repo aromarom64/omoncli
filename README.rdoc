@@ -1,0 +1,6 @@
+= omoncli
+
+Describe your project here
+
+:include:omoncli.rdoc
+

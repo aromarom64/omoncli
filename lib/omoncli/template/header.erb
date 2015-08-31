@@ -1,0 +1,6 @@
+connect <%= @username %>/<%= @password %>@<%= @service %>;
+
+spool <%= @filenamespool %> create
+prompt <%= @username %>
+prompt <%= @service %>
+spool off

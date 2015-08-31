@@ -1,0 +1,20 @@
+<%= render 'template/header.erb' %>
+
+col parameter heading 'parameter'
+col dlm_requests heading 'dlm|requests'
+col dlm_conflicts heading 'dlm|conflicts'
+col dlm_releases heading 'dlm|releases'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT
+parameter,
+dlm_requests,
+dlm_conflicts,
+dlm_releases
+FROM v$rowcache order by parameter
+/
+
+<%= render 'template/footer.erb' %>

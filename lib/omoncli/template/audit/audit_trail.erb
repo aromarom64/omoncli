@@ -1,0 +1,56 @@
+<%= render 'template/header.erb' %>
+
+variable vtopnumber number;
+begin
+  :vtopnumber := '<%= @topnum %>';
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+col os_username for A20 heading 'OS_USERNAME'
+col username for A15 heading 'USERNAME'
+col userhost for A30 heading 'USERHOST'
+col terminal for A20 heading 'TERMINAL'
+col obj_name for A30 heading 'OBJ_NAME'
+col owner for A15 heading 'OWNER'
+col action for 999999
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt topnum: <%= @topnum %>
+
+select
+  os_username,
+  username,
+  userhost,
+  terminal,
+  timestamp,
+  owner,
+  obj_name,
+  action,
+  action_name,
+  entryid,
+  statementid,
+  returncode
+from (
+  select os_username,
+  username,
+  userhost,
+  terminal,
+  timestamp,
+  owner,
+  obj_name,
+  action,
+  action_name,
+  entryid,
+  statementid,
+  returncode,
+  row_number() over (order by timestamp desc) xrank
+  from dba_audit_trail
+)
+where xrank <= :vtopnumber;
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,38 @@
+<%= render 'template/header.erb' %>
+
+variable vSID number;
+variable vINSTANCE number;
+begin
+  :vSID := <%= @sid %>;
+  :vINSTANCE := <%= @instance %>;
+end;
+/
+
+col user_name for A15 heading 'USERNAME'
+col schemaname for A15 heading 'SCHEMANAME'
+col sid for 9999 heading 'SID'
+col inst_id for 9999 heading 'INST'
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt sid: <%= @sid %>
+prompt instance: <%= @instance %>
+
+select o.sid, o.sql_text, o.user_name, o.inst_id, s.schemaname, o.sql_id,
+q.last_active_time,q.executions,q.elapsed_time/1000000 elapsed_time,q.last_load_time,
+q.sharable_mem,q.persistent_mem,q.runtime_mem,
+q.address,q.hash_value
+from gv$open_cursor o, gv$session s, gv$sqlarea q
+where o.saddr = s.saddr
+and o.sid = s.sid
+and o.inst_id = s.inst_id
+and o.inst_id = q.inst_id
+and o.sql_id = q.sql_id
+and o.sid = :vSID
+and o.inst_id = :vINSTANCE
+/
+
+<%= render 'template/footer.erb' %>

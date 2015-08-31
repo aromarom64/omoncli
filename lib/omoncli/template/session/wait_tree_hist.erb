@@ -1,0 +1,37 @@
+<%= render 'template/header.erb' %>
+
+--col INST_ID for 9999999
+col LVL for 999
+col BLOCKING_TREE for a30
+col EVENT for a64
+col WAITS for 999999
+col AVG_WAIT_TIME_MS for 999999
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+with ash as (select /*+ materialize*/ * from dba_hist_active_sess_history where snap_id between <%= @snap_id_start %> and <%= @snap_id_finish %>)
+select LEVEL as LVL,
+--       instance_number as INST_ID,
+       LPAD(' ',(LEVEL-1)*2)||decode(ash.session_type,'BACKGROUND',REGEXP_SUBSTR(program, '\([^\)]+\)'), nvl2(qc_session_id, 'PX', 'FOREGROUND')) as BLOCKING_TREE,
+--       ash.SQL_ID,
+       decode(session_state, 'WAITING', EVENT, 'On CPU / runqueue') as EVENT,
+       count(*) as WAITS_COUNT,
+       count(distinct session_id) as SESS_COUNT,
+       round(avg(time_waited) / 1000) as AVG_WAIT_TIME_MS
+  from ash
+  where session_state = 'WAITING'
+ start with <%= @condition %>
+connect by nocycle prior ash.SAMPLE_ID = ash.SAMPLE_ID
+       and ash.SESSION_ID = prior ash.BLOCKING_SESSION
+--       and ash.instance_number = prior ash.BLOCKING_inst_id
+ group by LEVEL,
+          instance_number,
+          LPAD(' ',(LEVEL-1)*2)||decode(ash.session_type,'BACKGROUND',REGEXP_SUBSTR(program, '\([^\)]+\)'), nvl2(qc_session_id, 'PX', 'FOREGROUND')),
+--        ash.SQL_ID,
+          decode(session_state, 'WAITING', EVENT, 'On CPU / runqueue')
+ order by instance_number, LEVEL, count(*) desc
+/
+
+<%= render 'template/footer.erb' %>

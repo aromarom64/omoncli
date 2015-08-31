@@ -1,0 +1,23 @@
+<%= render 'template/header.erb' %>
+
+col username for A20 tru
+col inst_id for 999 heading 'Id'
+col sid for 9999 heading 'Sid'
+col serial# for 99999 heading 'Serial'
+col segtype for A10 heading 'Segtype'
+col extents for 9999 heading 'Extents'
+col blocks for 999999 heading 'Blocks'
+col segfile# for 999 heading 'Seg|file'
+
+set trim on trims on linesize 160 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select /*+ ORDERED */
+tu.inst_id, tu.username, tu.sql_id, s.sid, s.serial#, s.sql_id sql_id_c, --s.sql_address,
+tu.segtype,tu.extents, tu.blocks, tu.segfile#
+from gv$tempseg_usage tu, gv$session s
+where tu.session_addr=s.saddr and tu.session_num=s.serial#
+/
+
+<%= render 'template/footer.erb' %>

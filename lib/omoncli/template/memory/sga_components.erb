@@ -1,0 +1,73 @@
+<%= render 'template/header.erb' %>
+
+variable vINST number;
+begin
+  :vINST := 1;
+end;
+/
+
+column description for A60
+column name for A35
+column display_value for A15
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+prompt SGA Parameters
+
+select inst_id, name, value/1024/1024 MB, display_value, description from gv$parameter
+where inst_id = :vINST and name in ('sga_max_size','sga_target','shared_pool_size','db_16k_cache_size',
+'db_2k_cache_size','db_32k_cache_size','db_4k_cache_size','db_8k_cache_size','db_cache_size',
+'db_keep_cache_size','db_recycle_cache_size','java_pool_size','large_pool_size','olap_page_pool_size',
+'streams_pool_size', 'log_buffer')
+order by name
+/
+
+prompt SGAINFO
+
+select inst_id, name, round(bytes/1024/1024) MB, resizeable from gv$sgainfo where inst_id=:vINST order by name
+/
+
+prompt Shared Pool Components - TOP 10
+
+select inst_id,name,MB from (
+select a.inst_id, a.name, round(a.bytes/1024/1024) MB, rank() over (order by bytes desc) rk
+from gv$sgastat a
+where pool = 'shared pool' and inst_id = :vINST) where rk <= 10
+/
+
+spool off
+
+variable vINST number;
+begin
+  :vINST := 2;
+end;
+/
+
+spool <%= @filenamespool %> append
+
+prompt SGA Parameters
+
+select inst_id, name, value/1024/1024 MB, display_value, description from gv$parameter
+where inst_id = :vINST and name in ('sga_max_size','sga_target','shared_pool_size','db_16k_cache_size',
+'db_2k_cache_size','db_32k_cache_size','db_4k_cache_size','db_8k_cache_size','db_cache_size',
+'db_keep_cache_size','db_recycle_cache_size','java_pool_size','large_pool_size','olap_page_pool_size',
+'streams_pool_size', 'log_buffer')
+order by name
+/
+
+prompt SGAINFO
+
+select inst_id, name, round(bytes/1024/1024) MB, resizeable from gv$sgainfo where inst_id=:vINST order by name
+/
+
+prompt Shared Pool Components - TOP 10
+
+select inst_id,name,MB from (
+select a.inst_id, a.name, round(a.bytes/1024/1024) MB, rank() over (order by bytes desc) rk
+from gv$sgastat a
+where pool = 'shared pool' and inst_id = :vINST) where rk <= 10
+/
+
+<%= render 'template/footer.erb' %>

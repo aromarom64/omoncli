@@ -1,0 +1,29 @@
+<%= render 'template/header.erb' %>
+
+col inst_id format 9 heading 'In|Id'
+col component format a25 tru
+col user_specified_size heading 'USER|SPECIFIED SIZE'
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select inst_id,
+ component,
+ current_size,
+ min_size,
+ max_size,
+ user_specified_size,
+ oper_count,
+ last_oper_type,
+ last_oper_mode,
+ last_oper_time,
+ granule_size
+from gv$sga_dynamic_components
+order by inst_id, component
+/
+
+<%= render 'template/footer.erb' %>

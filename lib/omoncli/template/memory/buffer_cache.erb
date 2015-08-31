@@ -1,0 +1,32 @@
+<%= render 'template/header.erb' %>
+
+col inst_id format 9 heading 'ins|tid'
+col id format 9 heading 'id'
+col name format A6 tru heading 'name'
+col block_size format 9999 heading 'block|size'
+col advice_status heading 'advice|status'
+col size_for_estimate heading 'size for|estimate'
+col size_factor heading 'size|factor'
+col buffers_for_estimate heading 'buffers for|estimate'
+col estd_physical_read_factor heading 'estd physical|read factor'
+col estd_physical_reads heading 'estd phys|ical reads'
+col estd_physical_read_time heading 'estd phys|read time'
+col estd_pct_of_db_time_for_reads heading 'estd pct of|db time|for reads'
+col estd_cluster_reads heading 'estd clus|ter reads'
+col estd_cluster_read_time heading 'estd clus|ter read|time'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select inst_id, ((1- (sum(decode(a.name,'physical reads',value,0)))/
+        (sum(decode(a.name,'db block gets',value,0)) + 
+         sum(decode(a.name,'consistent gets',value,0)))) * 100) "PERCENT"
+from    gv$sysstat a
+group by inst_id
+/
+
+select * from GV$DB_CACHE_ADVICE
+/
+
+<%= render 'template/footer.erb' %>

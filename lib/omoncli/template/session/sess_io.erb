@@ -1,0 +1,27 @@
+<%= render 'template/header.erb' %>
+
+variable vSID number;
+variable vINSTANCE number;
+begin
+  :vSID := <%= @sid %>;
+  :vINSTANCE := <%= @instance %>;
+end;
+/
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+prompt sid: <%= @sid %>
+prompt instance: <%= @instance %>
+
+select
+block_gets,
+consistent_gets,
+physical_reads,
+block_changes,
+consistent_changes
+from gv$sess_io
+where sid = :vSID and inst_id = :vINSTANCE
+/
+
+<%= render 'template/footer.erb' %>

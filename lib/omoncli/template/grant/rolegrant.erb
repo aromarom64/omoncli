@@ -1,0 +1,71 @@
+<%= render 'template/header.erb' %>
+
+variable vorarole varchar2(30);
+begin
+  :vorarole := '<%= @orarole %>';
+end;
+/
+
+col object_type format A15 heading 'Object|type'
+col grantee format A15 heading 'Grantee'
+col owner format A10 heading 'Owner'
+col table_name format A30 heading 'Table|name'
+col column_name format A20 heading 'Column|name'
+col privilege format A20 heading 'Privilege'
+col grantable format A20 heading 'Grantable'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+prompt Role: <%= @orarole %>
+
+prompt Lack privileges to public role !!!!
+
+Select o.object_type, pp.*
+from   dba_objects o,
+       (Select p.grantee, p.owner, p.table_name, null column_name, p.privilege,
+p.grantable        from   dba_tab_privs p, dba_roles r
+        where  p.GRANTEE = r.role
+ and P.GRANTEE = :vorarole
+        UNION
+        Select p.grantee, p.owner, p.table_name, p.column_name, p.privilege,
+p.grantable        from   dba_col_privs p, dba_roles r
+        where  p.GRANTEE = r.role
+ and P.GRANTEE = :vorarole
+        ) pp
+where o.OWNER = pp.owner
+and   o.object_name = pp.table_name
+and   o.object_type in ('TABLE', 'VIEW', 'SEQUENCE', 'PACKAGE', 'PROCEDURE',
+'FUNCTION', 'SNAPSHOT', 'MATERIALIZED VIEW', 'DIRECTORY', 'LIBRARY', 'TYPE',
+'OPERATOR', 'INDEXTYPE')order by pp.grantee, pp.owner, pp.table_name, pp.column_name
+/
+
+Select  password_required
+FROM dba_roles
+WHERE ROLE = :vorarole
+/
+
+Select * from dba_roles
+where ROLE = :vorarole
+/
+
+Select p.*
+from   dba_role_privs p, dba_roles r
+where  p.GRANTEE = r.ROLE
+and P.GRANTEE = :vorarole
+order by p.grantee
+/
+
+Select p.*
+from   sys.DBA_sys_privs p, dba_roles r
+Where  p.grantee = r.ROLE
+and P.GRANTEE = :vorarole
+order by P.GRANTEE
+/
+
+Select *
+from dba_role_privs
+where GRANTED_ROLE = :vorarole
+/
+
+<%= render 'template/footer.erb' %>

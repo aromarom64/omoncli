@@ -1,0 +1,25 @@
+<%= render 'template/header.erb' %>
+
+col inst_id for 9 heading 'ins|id'
+col resource_name for A25 heading 'Resource|Name'
+col current_utilization for 999999 heading 'Current|Utilization'
+col max_utilization for 999999 heading 'Max|Utilization'
+col initial_allocation for A10 heading 'Initial|Utilization'
+col limit_value for A12 heading 'Limit Value'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select inst_id,
+resource_name,
+current_utilization,
+max_utilization,
+initial_allocation,
+limit_value
+from gv$resource_limit
+where max_utilization > 0
+order by inst_id,resource_name
+/
+
+<%= render 'template/footer.erb' %>

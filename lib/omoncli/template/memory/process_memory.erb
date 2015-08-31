@@ -1,0 +1,34 @@
+<%= render 'template/header.erb' %>
+
+variable vsid number;
+variable vspid number;
+begin
+<%= ":vsid := #{@value};" if @sid == 'sid' -%>
+<%= ":vspid := #{@value};" if @sid == 'spid' -%>
+
+end;
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+spool <%= @filenamespool %> append
+PROMPT Display session memory usage from v$process_memory....
+
+SELECT
+    s.sid,p.spid,pm.*
+FROM
+    v$session s
+  , v$process p
+  , v$process_memory pm
+WHERE
+    s.paddr = p.addr
+AND p.pid = pm.pid
+<%= "AND s.sid  = :vsid" if @sid == 'sid' -%>
+<%= "AND p.spid = :vspid" if @sid  == 'spid' -%>
+
+ORDER BY
+    sid
+  , category
+/
+
+<%= render 'template/footer.erb' %>

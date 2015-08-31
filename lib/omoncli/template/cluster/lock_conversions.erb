@@ -1,0 +1,21 @@
+<%= render 'template/header.erb' %>
+
+col convert_type heading 'Convert|Type'
+col average_convert_time heading 'Average|Convert Time'
+col convert_count heading 'Convert|Count'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+prompt v$ges_convertal_local
+SELECT convert_type, average_convert_time, convert_count
+FROM v$ges_convert_local
+/
+
+prompt v$ges_convertal_remote
+SELECT convert_type,average_convert_time, convert_count
+FROM v$ges_convert_remote
+/
+
+<%= render 'template/footer.erb' %>

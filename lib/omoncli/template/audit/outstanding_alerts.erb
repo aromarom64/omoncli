@@ -1,0 +1,21 @@
+<%= render 'template/header.erb' %>
+
+col object_name for A15 heading 'Object|Name'
+col object_type for A11 heading 'Object|Type'
+col reason format A50 heading 'Reason'
+col creation_time for A35 heading 'Creation|Time'
+col metric_value heading 'Metric|Value'
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+select object_name,
+object_type,
+reason,
+metric_value,
+creation_time
+from dba_outstanding_alerts
+/
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,38 @@
+<%= render 'template/header.erb' %>
+
+col global_enqueue_get_time heading 'Get|Time'
+col global_enqueue_gets_sync heading 'Synchronous|Gets'
+col global_enqueue_gets_async heading 'Asynchronous|Gets'
+col average_lms headin 'Average|(MS)'
+col inst_id heading 'Inst|id'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT a.inst_id,
+global_enqueue_get_time,
+global_enqueue_gets_sync,
+global_enqueue_gets_async,
+(global_enqueue_get_time * 10) /
+(global_enqueue_gets_sync + global_enqueue_gets_async) as average_lms
+FROM
+(
+  SELECT inst_id, sum(value) AS global_enqueue_get_time
+  FROM gv$sysstat
+  WHERE name = 'global enqueue get time' group by inst_id
+) a,
+(
+  SELECT inst_id, sum(value) AS global_enqueue_gets_sync
+  FROM gv$sysstat
+  WHERE name = 'global enqueue gets sync' group by inst_id
+) b,
+(
+  SELECT inst_id, sum(value) AS global_enqueue_gets_async
+  FROM gv$sysstat
+  WHERE name = 'global enqueue gets async' group by inst_id
+) c
+where a.inst_id = b.inst_id and b.inst_id = c.inst_id
+/
+
+<%= render 'template/footer.erb' %>

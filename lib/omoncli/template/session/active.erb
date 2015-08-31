@@ -1,0 +1,53 @@
+<%= render 'template/header.erb' %>
+
+column username for A10
+column id for 9
+column sid for 9999
+column serial for 99999
+column osuser for a10 tru
+column program for a10 tru
+column event for a30 heading 'event'
+column last_call_et for 99999 heading 'last ca|ll et'
+column logon_time for A10 heading 'logon|time'
+column blocking_instance for 9 heading 'B|i'
+column blocking_session for 9999 heading 'Bloc|kses'
+column blocking_session_status for A11 heading 'Block|status'
+column sql_child_number for 999 heading 'Sql|ChN'
+column service_name for A10
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+prompt System: <%= @system %>
+
+<% if @system %>
+select s.username, s.inst_id id,
+s.sid,
+s.serial# serial,
+s.osuser,
+s.blocking_instance,
+s.blocking_session,
+s.blocking_session_status,
+s.last_call_et, s.sql_id, s.sql_child_number, s.program, s.event, sql_exec_id, service_name
+from GV$SESSION S
+where  s.status = 'ACTIVE'
+order by username, last_call_et desc
+/
+<% else %>
+select s.username, s.inst_id id,
+s.sid,
+s.serial# serial,
+s.osuser,
+s.blocking_instance,
+s.blocking_session,
+s.blocking_session_status,
+s.last_call_et, s.sql_id, s.sql_child_number, s.program, s.event, sql_exec_id, service_name
+from GV$SESSION S
+where  ( (s.status = 'ACTIVE') and (s.USERNAME is not null) and (NVL(s.osuser,'x') <> 'SYSTEM') and
+        (s.type <> 'BACKGROUND') )
+order by username, last_call_et desc
+/
+<% end %>
+
+
+<%= render 'template/footer.erb' %>

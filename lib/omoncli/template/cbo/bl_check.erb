@@ -1,0 +1,28 @@
+<%= render 'template/header.erb' %>
+
+
+variable vSQLID varchar2(30);
+begin
+  :vSQLID := '<%= @sql_id %>';
+end;
+/
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+col sql_handle for a30
+col plan_name  for a30
+
+spool <%= @filenamespool %> append
+prompt Sql_id: <%= @sql_id%>
+
+select sql_handle, plan_name
+  from dba_sql_plan_baselines bl, gv$sqlarea sa
+ where dbms_lob.compare(bl.sql_text, sa.sql_fulltext) = 0
+   and sa.sql_id = :vSQLID
+union
+select sql_handle, plan_name
+  from dba_sql_plan_baselines bl, dba_hist_sqltext sa
+ where dbms_lob.compare(bl.sql_text, sa.sql_text) = 0
+   and sa.sql_id = :vSQLID
+/
+
+<%= render 'template/footer.erb' %>

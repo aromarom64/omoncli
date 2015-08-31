@@ -1,0 +1,30 @@
+<%= render 'template/header.erb' %>
+
+col inst_id for 9 heading 'In|Id'
+col begin_time for A19 heading 'Begin|Time'
+col end_time for A19 heading 'End|Time'
+col consumer_group_name for a20 truncated heading 'Consumet|Group'
+col cpu_consumed_time for 999999 heading 'CPU|Time'
+col cpu_wait_time for 999999 heading 'CPU wait|Time'
+col io_requests for 999999 heading 'IO req/uests'
+col io_megabytes for 999999 heading 'IO meg/abytes'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+
+select
+inst_id,
+begin_time,
+end_time,
+consumer_group_name,
+cpu_consumed_time,
+cpu_wait_time,
+io_requests,
+io_megabytes
+from gv$rsrcmgrmetric
+/
+
+<%= render 'template/footer.erb' %>

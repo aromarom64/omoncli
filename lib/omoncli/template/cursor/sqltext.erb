@@ -1,0 +1,27 @@
+<%= render 'template/header.erb' %>
+
+variable vsqlid varchar2(30);
+variable vinstance number;
+begin
+  :vsqlid := '<%= @sql_id %>';
+  :vinstance:= '<%= @instance %>';
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt sql_id: <%= @sql_id %>
+prompt instance: <%= @instance %>
+
+select sql_text
+from  gv$sqltext_with_newlines
+where inst_id = :vinstance
+and sql_id = :vsqlid
+order by piece
+/
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,23 @@
+<%= render 'template/header.erb' %>
+
+variable vsqlid varchar2(30);
+variable vplhv number;
+variable vdbid number;
+begin
+  :vsqlid := '<%= @sql_id %>';
+  :vplhv := <%= if @plan_hash_value then "#{@plan_hash_value}" else 'null' end %>;
+  :vdbid := <%= if @db_id then "#{@db_id}" else 'null' end %>;
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+select * from table(dbms_xplan.display_awr(:vsqlid,:vplhv,:vdbid,'<%= @format %>'))
+/
+
+<%= render 'template/footer.erb' %>

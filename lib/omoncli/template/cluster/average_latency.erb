@@ -1,0 +1,28 @@
+<%= render 'template/header.erb' %>
+
+col gc_cr_block_receive_time heading 'Receive|Time'
+col gc_cr_blocks_received heading 'Blocks|Received'
+col average_latency heading 'Average|Latency (MS)'
+col gc_current_blocks_received headin 'Current Blocks|Received'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT a.inst_id,
+gc_cr_block_receive_time,
+gc_cr_blocks_received,
+(gc_cr_block_receive_time * 10) /
+gc_cr_blocks_received average_latency
+FROM
+(
+  SELECT inst_id, sum(value) AS gc_cr_block_receive_time FROM gv$sysstat
+  WHERE name = 'gc cr block receive time' group by inst_id
+)a,
+(
+  SELECT inst_id, sum(value) AS gc_cr_blocks_received FROM gv$sysstat
+  WHERE name = 'gc cr blocks received' group by inst_id
+)b where a.inst_id = b.inst_id
+/
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,37 @@
+<%= render 'template/header.erb' %>
+
+col begin_time for A19 heading 'Begin|Time'
+col end_time for A19 heading 'End|Time'
+col service_name for a20 truncated heading 'Service'
+col instance_name for a10 heading 'Instance'
+col cpupercall for 99999999 heading 'CPU Time |mSec/Call'
+col dbtimepercall for 99999999 heading 'DB Time |mSec/Call'
+col callspersec heading 'Calls/sec' for 9999.99
+col dbtimepersec heading 'DB Time/sec' for 9999.99 
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+
+select
+begin_time,
+end_time,
+service_name,
+instance_name,
+cpupercall,
+dbtimepercall,
+callspersec,
+dbtimepersec
+from gv$instance gvi,
+gv$active_services gvas,
+gv$servicemetric gvsm
+where gvas.inst_id = gvsm.inst_id
+and gvas.name_hash = gvsm.service_name_hash
+and gvi.inst_id = gvsm.inst_id
+and gvsm.group_id = 10
+order by service_name, gvi.inst_id
+/
+
+<%= render 'template/footer.erb' %>

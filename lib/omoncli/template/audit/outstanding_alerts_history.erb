@@ -1,0 +1,52 @@
+<%= render 'template/header.erb' %>
+
+variable vtopnumber number;
+begin
+  :vtopnumber := '<%= @topnum %>';
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+col object_name for A15 heading 'Object|Name'
+col object_type for A11 heading 'Object|Type'
+col reason format A50 heading 'Reason'
+col creation_time for A35 heading 'Creation|Time'
+col time_suggested for A35 heading 'Suggested|Time'
+col metric_value heading 'Metric|Value'
+col message_type for A15 heading 'Message|Type'
+col message_group for A15 heading 'Message|Group'
+col resolution for A10 heading 'Message|Group'
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt topnum: <%= @topnum %>
+
+select
+  object_name,
+  object_type,
+  reason,
+  round(metric_value,2) metric_value,
+  creation_time,
+  time_suggested,
+  message_type,
+  message_group,
+  resolution
+from (
+  select object_name,
+  object_type,
+  reason,
+  round(metric_value,2) metric_value,
+  creation_time,
+  time_suggested,
+  message_type,
+  message_group,
+  resolution,
+  row_number() over (order by creation_time desc) xrank
+  from dba_alert_history)
+  where xrank <= :vtopnumber
+/
+
+<%= render 'template/footer.erb' %>

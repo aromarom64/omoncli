@@ -1,0 +1,22 @@
+<%= render 'template/header.erb' %>
+
+variable vHour number;
+begin
+  :vHour := <%= @hour %>;
+end;
+/
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+prompt Hour: <%= @hour %>
+
+select inst_id, begin_time, end_time, undoblks * 8192 / 1024 undo_kbytes, maxquerylen, maxqueryid, tuned_undoretention
+from gv$undostat
+where begin_time >= sysdate - :vHour/24
+order by inst_id, begin_time
+/
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,41 @@
+<%= render 'template/header.erb' %>
+
+variable vminutes number;
+variable vtopnumber number;
+begin
+  :vminutes := <%= @minutes %>;
+  :vtopnumber := <%= @topnum %>;
+end;
+/
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Minutes: <%= @minutes %>
+prompt Topnum: <%= @topnum %>
+
+WITH sql_class AS
+(select sql_id, state, count(*) occur from
+  (select   sql_id
+  ,  CASE  WHEN session_state = 'ON CPU' THEN 'CPU'
+           WHEN session_state = 'WAITING' AND wait_class IN ('User I/O') THEN 'IO'
+           WHEN session_state = 'WAITING' AND wait_class IN ('Cluster') THEN 'CLUSTER'
+           ELSE 'WAIT' END state
+    from gv$active_session_history
+    where   session_type IN ( 'FOREGROUND')
+    and sample_time  between trunc(sysdate,'MI') - :vminutes/24/60 and trunc(sysdate,'MI') )
+    group by sql_id, state),
+     ranked_sqls AS
+(select SQL_ID,  sum(occur) sql_occur  , rank () over (order by sum(occur)desc) xrank
+from sql_class
+group by sql_id )
+select sc.sql_id, state, occur from sql_class sc, ranked_sqls rs
+where rs.sql_id = sc.sql_id
+and rs.xrank <= :vtopnumber
+order by xrank, sql_id, state
+/
+
+<%= render 'template/footer.erb' %>

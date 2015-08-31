@@ -1,0 +1,26 @@
+<%= render 'template/header.erb' %>
+
+col inst_id format 9 heading 'ins|tid'
+col namespace heading 'namespace'
+col dlm_lock_requests heading 'lock|requests'
+col dlm_pin_requests heading 'pin|requests'
+col dlm_pin_releases headin 'pin|releases'
+col dlm_invalidation_requests heading 'invalid|requests'
+col dlm_invalidations heading 'invali|dations'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT
+inst_id,
+namespace,
+dlm_lock_requests,
+dlm_pin_requests,
+dlm_pin_releases,
+dlm_invalidation_requests,
+dlm_invalidations
+FROM gv$librarycache
+/
+
+<%= render 'template/footer.erb' %>

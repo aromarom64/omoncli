@@ -1,0 +1,29 @@
+<%= render 'template/header.erb' %>
+
+variable vSQLID varchar2(30);
+variable vMinute number;
+begin
+  :vSQLID := '<%= @sql_id %>';
+  :vMinute:= <%= @minutes %>;
+end;
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Sql_id: <%= @sql_id %>
+prompt Minute: <%= @minutes %>
+
+select sql_id,
+         sql_plan_hash_value,
+         nvl(sql_plan_line_id, 0) as SQL_PLAN_LINE_ID,
+         decode(session_state,'WAITING',event,session_state) as EVENT,
+         count(*) as WAIT_COUNT,
+         sum(time_waited) as time_waited,
+         sum(wait_time) as wait_time
+    from v$active_session_history
+   where sql_id = :vSQLID and sample_time > sysdate - :vMinute/(24*60)
+   group by sql_id, sql_plan_hash_value, sql_plan_line_id, decode(session_state,'WAITING',event,session_state)
+/
+
+<%= render 'template/footer.erb' %>

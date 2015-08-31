@@ -1,0 +1,57 @@
+<%= render 'template/header.erb' %>
+
+variable voratable varchar2(30);
+variable voraowner varchar2(30);
+begin
+  :voratable := '<%= @table %>';
+  :voraowner := '<%= @owner %>';
+end;
+/
+
+col table_owner for A10 heading 'Table|owner'
+col table_name for A15 heading 'Table|name'
+col partition_name for A15 heading 'Partition|name'
+col partition_position for 999 heading 'Ps'
+col tablespace_name for A8 heading 'Tabsp|name'
+col mbytes for 99999 heading 'Mbytes'
+col high_value heading 'High|value'
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Owner: <%= @owner %>
+prompt Table: <%= @table %>
+
+select a.table_owner, a.table_name, a.partition_name, a.partition_position, a.tablespace_name,
+  (select bytes/1024/1024
+  from dba_segments
+  where owner = a.table_owner and segment_name = a.table_name and partition_name = a.partition_name) mbytes,
+a.high_value
+from (
+select table_owner, table_name, partition_name, partition_position, tablespace_name, high_value
+from dba_tab_partitions where table_owner = :voraowner and table_name = :voratable
+order by table_owner, table_name, partition_position desc) a
+where rownum < 7
+order by a.table_owner, a.table_name, a.partition_position desc
+/
+
+prompt Part indexes:
+
+select index_name, partition_name, status, tablespace_name from dba_ind_partitions
+where index_name in (select index_name from dba_indexes where table_name = :voratable and owner = :voraowner)
+and index_owner = :voraowner
+order by index_name, partition_name
+/
+
+prompt Part indexes:
+prompt
+
+select index_name, partitioning_type, locality from dba_part_indexes where table_name = :voratable and owner=:voraowner
+/
+
+prompt Normal indexes:
+prompt
+select index_name, status from dba_indexes where table_name = :voratable and owner = :voraowner
+/
+
+<%= render 'template/footer.erb' %>

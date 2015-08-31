@@ -1,0 +1,25 @@
+<%= render 'template/header.erb' %>
+
+col username for A10 tru
+col segment_name for A20 heading 'Segment|name'
+col tablespace_name for A10 heading 'Tablespace|name'
+col status for A10 heading 'Status'
+col cr_get for 99999 heading 'Cr|get'
+col phy_io for 99999 heading 'Phy|io'
+col used_ublk for 99999 heading 'Used|ublk'
+col noundo for A3 heading 'Noundo'
+col start_date for A10 heading 'Start|time'
+col service_name for A12
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+SELECT t.inst_id, r.segment_name, r.tablespace_name, t.status, t.cr_get,
+t.phy_io, t.used_ublk, t.noundo, t.start_date, s.username, s.service_name, s.sql_id
+FROM sys.gv_$transaction t, dba_rollback_segs r, gv$session s
+WHERE  t.ses_addr=s.saddr and t.xidusn = r.segment_id
+ORDER BY t.start_time
+/
+
+<%= render 'template/footer.erb' %>

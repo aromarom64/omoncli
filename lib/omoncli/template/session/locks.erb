@@ -1,0 +1,55 @@
+<%= render 'template/header.erb' %>
+
+col inst_id for 9 heading 'ins|id'
+col sid for 99999 heading 'sid'
+col username for A9 heading 'username'
+col osuser for A9 heading 'osuser'
+col machine for A9 heading 'machine'
+col lock_type for A9 heading 'lock|type'
+col mode_held for A9 heading 'mode|held'
+col mode_requested for A9 heading 'mode re|quested'
+col lock_id1 for A8 heading 'lock|id1'
+col lock_id2 for A8 heading 'lock|id2'
+col block for A6 heading 'block'
+col lockwait for A10 heading 'lockwait'
+
+col owner for A8 heading 'owner'
+col object_type for A8 heading 'objec|type'
+col object_name for A8 heading 'objec|name'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+Select se.Inst_ID, lk.SID, se.username, se.OSUser, se.Machine,
+    DECODE(lk.TYPE,'TX','Transaction','TM','DML','UL','PL/SQL User Lock',lk.TYPE) lock_type,
+    DECODE(lk.lmode,0,'None',1,'Null',2,'Row-S (SS)',3,'Row-X (SX)',4,'Share',5,'S/Row-X (SSX)',6,'Exclusive',TO_CHAR(lk.lmode)) mode_held,
+    DECODE(lk.request,0,'None',1,'Null',2,'Row-S (SS)',3,'Row-X (SX)',4,'Share',5,'S/Row-X (SSX)',6,'Exclusive',TO_CHAR(lk.request)) mode_requested,
+    TO_CHAR(lk.id1) lock_id1,
+    TO_CHAR(lk.id2) lock_id2,
+    decode(block, 0, 'No', 1, 'Yes', 2, 'Global') block,
+    se.lockwait,
+    lk.ctime
+FROM GV$lock lk, GV$session se
+WHERE (lk.type='TX') AND (lk.SID = se.SID) AND (lk.inst_id = se.inst_id)
+/
+
+prompt Locks of type TM and UL
+
+Select se.inst_id, lk.SID, se.username, se.OSUser, se.Machine,
+    DECODE (lk.TYPE,'TX','Transaction','TM','DML','UL','PL/SQL User Lock',lk.TYPE) lock_type,
+    DECODE (lk.lmode,0,'None',1,'Null',2,'Row-S (SS)',3,'Row-X (SX)',4,'Share',5,'S/Row-X (SSX)',6,'Exclusive',TO_CHAR(lk.lmode)) mode_held,
+    DECODE (lk.request,0,'None',1,'Null',2,'Row-S (SS)',3,'Row-X (SX)',4,'Share',5,'S/Row-X (SSX)',6,'Exclusive',TO_CHAR(lk.request)) mode_requested,
+    TO_CHAR(lk.id1) lock_id1,
+    TO_CHAR(lk.id2) lock_id2,
+    ob.owner,
+    ob.object_type,
+    ob.object_name,
+    decode(lk.Block, 0, 'No', 1, 'Yes', 2, 'Global') block,
+    se.lockwait,
+    lk.ctime
+FROM GV$lock lk, dba_objects ob, GV$session se
+WHERE lk.TYPE IN ('TM','UL') AND lk.SID = se.SID AND lk.id1 = ob.object_id (+) AND (lk.inst_id = se.inst_id)
+/
+
+<%= render 'template/footer.erb' %>

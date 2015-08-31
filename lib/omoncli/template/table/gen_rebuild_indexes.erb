@@ -1,0 +1,23 @@
+<%= render 'template/header.erb' %>
+
+variable voratable varchar2(30);
+variable voraowner varchar2(30);
+begin
+  :voratable := '<%= @table %>';
+  :voraowner := '<%= @owner %>';
+end;
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Owner: <%= @owner %>
+prompt Table: <%= @table %>
+
+select 'alter index ' || owner || '.' || index_name
+|| ' rebuild' <%= "||' tablespace #{@tablespace}'" if @tablespace %> <%= "||' #{@online}'" if @online %> || ';'
+from dba_indexes
+where index_type = 'NORMAL' and table_name = :voratable and owner = :voraowner
+/
+
+<%= render 'template/footer.erb' %>

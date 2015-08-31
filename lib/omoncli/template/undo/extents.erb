@@ -1,0 +1,20 @@
+<%= render 'template/header.erb' %>
+
+col status heading 'Status'
+col tablespace_name heading 'Tablespace|name'
+col mbytes for 99999 heading 'Mbytes'
+col extent_count heading 'Count|extent'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select status,
+tablespace_name,
+sum(bytes)/1024/1024 as mbytes,
+count(*) as extent_count
+from dba_undo_extents
+group by status, tablespace_name
+/
+
+<%= render 'template/footer.erb' %>

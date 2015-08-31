@@ -1,0 +1,34 @@
+<%= render 'template/header.erb' %>
+
+define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
+variable oldest varchar2(30);
+variable latest varchar2(30);
+variable vevent varchar2(64);
+begin
+    :oldest := '<%= @bdate %>';
+    :latest := '<%= @edate %>';
+    :vevent:= '<%= @event_name %>';
+end;
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+prompt Event_name: <%= @event_name %>
+prompt Bdate: <%= @bdate %>
+prompt Edate: <%= @edate %>
+
+select a.snap_id,
+a.instance_number,
+a.event_name,
+a.total_waits,
+a.time_waited_micro
+from DBA_HIST_SYSTEM_EVENT a, dba_hist_snapshot b
+where a.snap_id=b.snap_id
+and a.event_name = :vevent
+and b.begin_interval_time between to_date(:oldest, '&ash_time_format') and to_date(:latest, '&ash_time_format')
+order by a.snap_id desc, a.instance_number
+/
+
+
+<%= render 'template/footer.erb' %>

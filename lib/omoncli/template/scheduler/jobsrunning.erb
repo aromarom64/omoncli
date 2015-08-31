@@ -1,0 +1,26 @@
+<%= render 'template/header.erb' %>
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+col job_name for A30 heading 'Job|Name'
+col run_count heading 'Run|Count'
+col failure_count heading 'Failure|Count'
+col state for A10 heading 'State'
+col job_creator for A20 heading 'Job|Creator'
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+select sid, job, failures, last_date, this_date, instance
+from dba_jobs_running
+where not this_date is null
+/
+
+select job, SCHEMA_USER, LAST_DATE, THIS_DATE, NEXT_DATE, broken, FAILURES,
+what, interval from dba_jobs
+where not this_date is null
+/
+
+<%= render 'template/footer.erb' %>

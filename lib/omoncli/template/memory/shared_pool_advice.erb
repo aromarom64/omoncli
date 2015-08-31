@@ -1,0 +1,10 @@
+<%= render 'template/header.erb' %>
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+
+select * from gv$shared_pool_advice order by inst_id, shared_pool_size_factor
+/
+
+<%= render 'template/footer.erb' %>

@@ -1,0 +1,87 @@
+<%= render 'template/header.erb' %>
+
+
+variable vSQLHAN varchar2(30);
+variable vPLAN varchar2(30);
+begin
+  :vSQLHAN := '<%= @sql_handle%>';
+  :vPLAN := <%= if @plan_name then "'#{@plan_name}'" else 'null' end %>;
+end;
+/
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+col sql_handle for a30
+col plan_name  for a30
+
+spool <%= @filenamespool %> append
+prompt Sql_handle: <%= @sql_handle%>
+
+with sql_list as (
+select distinct sql_id, plan_hash_value
+  from dba_sql_plan_baselines bl,
+       gv$sql                 s
+ where bl.sql_handle = :vSQLHAN and bl.plan_name = nvl(:vPLAN, bl.plan_name)
+   and dbms_lob.compare(bl.sql_text, s.sql_fulltext) = 0
+   and not exists
+   (select distinct substr(extractvalue(value(d), '/hint'), 1, 200) as outline_hints
+    from xmltable('/*/outline_data/hint' passing
+                  (select xmltype(other_xml) as xmlval
+                     from gv$sql_plan
+                    where inst_id         = s.inst_id
+                      and sql_id          = s.sql_id
+                      and plan_hash_value = s.plan_hash_value
+                      and other_xml is not null)) d
+    minus
+    select substr(extractvalue(value(d), '/hint'), 1, 200) as outline_hints
+      from xmltable('/outline_data/hint' passing
+                    (select xmltype(comp_data) as xmlval
+                       from sys.sqlobj$data od, sys.sqlobj$ o
+                      where o.obj_type = 2
+                        and od.obj_type = 2
+                        and o.name = bl.plan_name
+                        and o.signature = od.signature
+                        and o.plan_id = od.plan_id
+                        and comp_data is not null)) d)
+union
+select distinct sa.sql_id, plan_hash_value
+  from dba_sql_plan_baselines bl,
+       dba_hist_sqltext       sa,
+       dba_hist_sql_plan      spa
+ where bl.sql_handle = :vSQLHAN and bl.plan_name = nvl(:vPLAN, bl.plan_name)
+   and dbms_lob.compare(bl.sql_text, sa.sql_text) = 0
+   and sa.sql_id = spa.sql_id
+   and not exists
+   (select substr(extractvalue(value(d), '/hint'), 1, 200) as outline_hints
+            from xmltable('/*/outline_data/hint' passing
+                          (select xmltype(other_xml) as xmlval
+                             from DBA_HIST_SQL_PLAN
+                            where sql_id = spa.sql_id
+                              and plan_hash_value = spa.plan_hash_value
+                              and other_xml is not null)) d
+    minus
+    select substr(extractvalue(value(d), '/hint'), 1, 200) as outline_hints
+      from xmltable('/outline_data/hint' passing
+                    (select xmltype(comp_data) as xmlval
+                       from sys.sqlobj$data od, sys.sqlobj$ o
+                      where o.obj_type = 2
+                        and od.obj_type = 2
+                        and o.name = bl.plan_name
+                        and o.signature = od.signature
+                        and o.plan_id = od.plan_id
+                        and comp_data is not null)) d)
+)
+select l.SQL_ID,
+       l.PLAN_HASH_VALUE,
+       to_char(max(nvl(s.last_active_time, h.timestamp)), 'dd.mm.yyyy hh24:mi:ss') as SQL_EXEC_TIMESTAMP,
+       nvl2(max(s.sql_id), 'CURRENT', 'ARCHIVE')                                   as SQL_TYPE,
+       to_char(max(bl.last_executed), 'dd.mm.yyyy hh24:mi:ss')                     as BL_EXEC_TIMESTAMP
+       --max(bl.REPRODUCED)                                                          as BL_REPRODUCED
+  from sql_list l
+  left join gv$sql s            on l.sql_id = s.sql_id and l.plan_hash_value = s.plan_hash_value
+  left join dba_hist_sql_plan h on l.sql_id = h.sql_id and l.plan_hash_value = h.plan_hash_value
+  join dba_sql_plan_baselines bl on bl.sql_handle = :vSQLHAN and bl.plan_name = nvl(:vPLAN, bl.plan_name)
+ group by l.sql_id, l.plan_hash_value
+ order by to_char(max(nvl(s.last_active_time, h.timestamp)), 'dd.mm.yyyy hh24:mi:ss') desc
+/
+
+<%= render 'template/footer.erb' %>

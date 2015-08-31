@@ -1,0 +1,37 @@
+<%= render 'template/header.erb' %>
+
+variable vDay number;
+begin
+  :vDay := <%= @day %>;
+end;
+/
+
+col session_key for 99999 heading 'session|key'
+col session_recid for 99999 heading 'session|recid'
+col session_stamp for 999999999 heading 'session|stamp'
+col command_id for A20 heading 'command|id'
+col status for A10 heading 'status'
+col start_time heading 'start_time'
+col time_taken_display for A12 heading 'time|taken'
+col input_type for A10 heading 'input|type'
+col output_device_type for A7 heading 'device'
+col input_bytes_display for A10 heading 'input'
+col output_bytes_display for A10 heading 'output'
+col output_bytes_per_sec_display for A10 heading 'per|sec'
+
+set trim on trims on linesize 300 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+prompt Day: <%= @day %>
+
+select b.session_key, b.session_recid, b.session_stamp, b.command_id, b.status, b.start_time,
+b.time_taken_display, b.input_type, b.output_device_type, b.input_bytes_display, b.output_bytes_display,
+b.output_bytes_per_sec_display
+from v$rman_backup_job_details b
+where ( b.start_time > (SYSDATE - :vDay) )
+order by b.start_time desc
+/
+
+<%= render 'template/footer.erb' %>

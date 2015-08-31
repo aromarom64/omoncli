@@ -1,0 +1,33 @@
+<%= render 'template/header.erb' %>
+
+col name for A30
+col value for A30
+col applied_scn for 99999999999999
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS';
+
+spool <%= @filenamespool %> append
+
+prompt v$standby_apply_snapshot
+
+select snapshot_time,
+thread#, sequence#, applied_scn,apply_rate
+from gv$standby_apply_snapshot
+/
+
+prompt v$recovery_progress
+--ITEM: Log Files, Active Apply Rate, Average Apply Rate, Redo Applied, Last Applied Redo,
+--Active Time, Apply Time per Log, Checkpoint Time per Log, Elapsed Time
+select start_time,
+item, sofar, timestamp,
+units
+from gv$recovery_progress
+/
+
+prompt v$archive_gap
+sELECT THREAD#, LOW_SEQUENCE#, HIGH_SEQUENCE# FROM gV$ARCHIVE_GAP
+/
+
+<%= render 'template/footer.erb' %>

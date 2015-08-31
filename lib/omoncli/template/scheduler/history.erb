@@ -1,0 +1,36 @@
+<%= render 'template/header.erb' %>
+
+col client_name for A16 heading 'Client|Name'
+col window_name for A8 heading 'Window|Name'
+col window_start_time for A18 heading 'Window start|Time'
+col window_duration for A16 heading 'Window|Duration'
+col job_name for A12 heading 'Job|Name'
+col job_status for A9 heading 'Job|Status'
+col job_start_time for A18 heading 'Job start|Time'
+col job_duration for A16 heading 'Job|Duration'
+col job_error for 9 heading 'J|E'
+col job_info for A50 heading 'Job|Info'
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
+
+spool <%= @filenamespool %> append
+
+select
+client_name,
+window_name,
+window_start_time,
+window_duration,
+job_name,
+job_status,
+job_start_time,
+job_duration,
+job_error,
+job_info
+from dba_autotask_job_history
+order by window_start_time desc
+/
+
+<%= render 'template/footer.erb' %>

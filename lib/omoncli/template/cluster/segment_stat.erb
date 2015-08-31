@@ -1,0 +1,56 @@
+<%= render 'template/header.erb' %>
+
+variable vSchema varchar2(30);
+begin
+  :vSchema := '<%= @schema %>';
+end;
+/
+
+col table_name heading 'Table Name'
+col gc_buffer_busy heading 'Buffer|Busy'
+col gc_cr_blocks_received heading 'CR Blocks|Received'
+col gc_current_blocks_received headin 'Current Blocks|Received'
+
+set trim on trims on linesize 150 pagesize 4000 timing on;
+
+spool <%= @filenamespool %> append
+prompt Schema: <%= @schema %>
+
+SELECT
+table_name,
+gc_buffer_busy,
+gc_cr_blocks_received,
+gc_current_blocks_received
+FROM
+(
+  SELECT table_name FROM dba_tables
+  WHERE owner = :vSchema
+) t,
+(
+  SELECT object_name,value AS gc_buffer_busy
+  FROM v$segment_statistics
+  WHERE owner = :vSchema
+  AND object_type = 'TABLE'
+  AND statistic_name = 'gc buffer busy'
+) ss1,
+(
+  SELECT object_name,value AS gc_cr_blocks_received
+  FROM v$segment_statistics
+  WHERE owner = :vSchema
+  AND object_type = 'TABLE'
+  AND statistic_name = 'gc cr blocks received'
+) ss2,
+(
+  SELECT object_name,value AS gc_current_blocks_received
+  FROM v$segment_statistics
+  WHERE owner = :vSchema
+  AND object_type = 'TABLE'
+  AND statistic_name = 'gc current blocks received'
+) ss3
+WHERE t.table_name = ss1.object_name
+AND t.table_name = ss2.object_name
+AND t.table_name = ss3.object_name
+order by t.table_name
+/
+
+<%= render 'template/footer.erb' %>
