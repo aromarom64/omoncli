@@ -32,13 +32,14 @@ module Omoncli
     long_desc <<-LONGDESC
       omoncli audit audit_trail"
     LONGDESC
-    option :topnum, :default => 10, :type => :numeric
+    option :rows, :type => :numeric
+    option :hour, :default => 5, :type => :numeric
     def audit_trail
       Sqlpage.class_eval do
-        attr_accessor :topnum
+        attr_accessor :rows, :hour
       end
       r = Sqlpage.new('template/audit/audit_trail.erb')
-      r.topnum = options[:topnum]
+      r.rows, r.hour = options[:rows], options[:hour]
       vim(sqlplus(r))
     end
 
