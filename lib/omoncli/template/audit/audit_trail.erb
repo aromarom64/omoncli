@@ -1,12 +1,18 @@
 <%= render 'template/header.erb' %>
 
-variable vtopnumber number;
-begin
-  :vtopnumber := '<%= @topnum %>';
-end;
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
 /
 
-alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+<%# xt_scripts %>
+<% if @rows %>
+variable vrows number;
+begin
+  :vrows := '<%= @rows %>';
+end;
 /
 
 col os_username for A20 heading 'OS_USERNAME'
@@ -17,10 +23,7 @@ col obj_name for A30 heading 'OBJ_NAME'
 col owner for A15 heading 'OWNER'
 col action for 999999
 
-set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
-
-spool <%= @filenamespool %> append
-prompt topnum: <%= @topnum %>
+prompt rows: <%= @rows %>
 
 select
   os_username,
@@ -51,6 +54,106 @@ from (
   row_number() over (order by timestamp desc) xrank
   from dba_audit_trail
 )
-where xrank <= :vtopnumber;
+where xrank <= :vrows
+/
+
+<% else %>
+variable vhour number;
+begin
+  :vhour := '<%= @hour %>';
+end;
+/
+
+prompt hour: <%= @hour %>
+
+with t as (
+      select spare1            OS_USERNAME ,
+             userid            USERNAME ,
+             userhost          USERHOST ,
+             terminal          TERMINAL ,
+             cast (
+                 (from_tz(ntimestamp#,'00:00') at local) as date)
+                               timestamp,
+             obj$creator       OWNER ,
+             obj$name          OBJECT_NAME ,
+             aud.action#       ACTION ,
+             act.name          ACTION_NAME ,
+             new$owner         NEW_OWNER ,
+             new$name          NEW_NAME ,
+             decode(aud.action#,
+                    108 /* grant  sys_priv */, null,
+                    109 /* revoke sys_priv */, null,
+                    114 /* grant  role */, null,
+                    115 /* revoke role */, null,
+                    auth$privileges)
+                               OBJ_PRIVILEGE ,
+             decode(aud.action#,
+                    108 /* grant  sys_priv */, spm.name,
+                    109 /* revoke sys_priv */, spm.name,
+                    null)
+                               SYS_PRIVILEGE ,
+             decode(aud.action#,
+                    108 /* grant  sys_priv */, substr(auth$privileges,1,1),
+                    109 /* revoke sys_priv */, substr(auth$privileges,1,1),
+                    114 /* grant  role */, substr(auth$privileges,1,1),
+                    115 /* revoke role */, substr(auth$privileges,1,1),
+                    null)
+                               ADMIN_OPTION ,
+             auth$grantee      GRANTEE ,
+             decode(aud.action#,
+                    104 /* audit   */, aom.name,
+                    105 /* noaudit */, aom.name,
+                    null)
+                               AUDIT_OPTION  ,
+             ses$actions       SES_ACTIONS   ,
+             logoff$time       LOGOFF_TIME   ,
+             logoff$lread      LOGOFF_LREAD  ,
+             logoff$pread      LOGOFF_PREAD  ,
+             logoff$lwrite     LOGOFF_LWRITE ,
+             decode(aud.action#,
+                    104 /* audit   */, null,
+                    105 /* noaudit */, null,
+                    108 /* grant  sys_priv */, null,
+                    109 /* revoke sys_priv */, null,
+                    114 /* grant  role */, null,
+                    115 /* revoke role */, null,
+                    aud.logoff$dead)
+                                LOGOFF_DLOCK ,
+             comment$text       COMMENT_TEXT ,
+             sessionid          SESSIONID ,
+             entryid            ENTRYID ,
+             statement          STATEMENTID ,
+             returncode         RETURNCODE ,
+             spx.name           PRIVILEGE ,
+             clientid           CLIENT_ID ,
+             auditid            ECONTEXT_ID ,
+             sessioncpu         SESSION_CPU ,
+             ntimestamp#                  ntimestamp#,
+             proxy$sid                       PROXY_SESSIONID,
+             user$guid                            GLOBAL_UID,
+             instance#                       INSTANCE_NUMBER,
+             process#                             OS_PROCESS,
+             xid                               TRANSACTIONID,
+             scn                                         SCN,
+             to_nchar(substr(sqlbind,1,2000))       SQL_BIND,
+             to_nchar(substr(sqltext,1,2000))       SQL_TEXT,
+             action#
+      from
+          sys.aud$ aud
+         , system_privilege_map spm, system_privilege_map spx,
+           STMT_AUDIT_OPTION_MAP aom, audit_actions act
+      where   aud.action#     = act.action    (+)
+        and - aud.logoff$dead = spm.privilege (+)
+        and   aud.logoff$dead = aom.option#   (+)
+        and - aud.priv$used   = spx.privilege (+)
+)-------------------------------------------------------
+select *
+from t
+where ntimestamp#+0 between sysdate-:vhour/24 and sysdate
+  and action# not in (100,101)
+order by ntimestamp#+0 desc
+/
+<% end %>
+
 
 <%= render 'template/footer.erb' %>
