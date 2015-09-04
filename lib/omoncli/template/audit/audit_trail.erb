@@ -66,6 +66,21 @@ end;
 
 prompt hour: <%= @hour %>
 
+set linesize 1000
+col os_username for A20 heading 'OS_USERNAME'
+col username for A15 heading 'USERNAME'
+col userhost for A20 heading 'USERHOST'
+col terminal for A15 heading 'TERMINAL'
+col object_name for A30
+col owner for A15 heading 'OWNER'
+col new_owner for A15
+col new_name for A30
+col comment_text for A30
+col sql_bind for A30
+col sql_text for A30
+col auditid for A20
+col NTIMESTAMP# for A30
+
 with t as (
       select spare1            OS_USERNAME ,
              userid            USERNAME ,
@@ -106,10 +121,10 @@ with t as (
                     null)
                                AUDIT_OPTION  ,
              ses$actions       SES_ACTIONS   ,
-             logoff$time       LOGOFF_TIME   ,
-             logoff$lread      LOGOFF_LREAD  ,
-             logoff$pread      LOGOFF_PREAD  ,
-             logoff$lwrite     LOGOFF_LWRITE ,
+             --logoff$time       LOGOFF_TIME   ,
+             --logoff$lread      LOGOFF_LREAD  ,
+             --logoff$pread      LOGOFF_PREAD  ,
+             --logoff$lwrite     LOGOFF_LWRITE ,
              decode(aud.action#,
                     104 /* audit   */, null,
                     105 /* noaudit */, null,
@@ -119,24 +134,24 @@ with t as (
                     115 /* revoke role */, null,
                     aud.logoff$dead)
                                 LOGOFF_DLOCK ,
-             comment$text       COMMENT_TEXT ,
+             --comment$text       COMMENT_TEXT ,
              sessionid          SESSIONID ,
              entryid            ENTRYID ,
              statement          STATEMENTID ,
              returncode         RETURNCODE ,
-             spx.name           PRIVILEGE ,
-             clientid           CLIENT_ID ,
-             auditid            ECONTEXT_ID ,
+             --spx.name           PRIVILEGE ,
+             --clientid           CLIENT_ID ,
+             --auditid            ECONTEXT_ID ,
              sessioncpu         SESSION_CPU ,
              ntimestamp#                  ntimestamp#,
-             proxy$sid                       PROXY_SESSIONID,
-             user$guid                            GLOBAL_UID,
+             --proxy$sid                       PROXY_SESSIONID,
+             --user$guid                            GLOBAL_UID,
              instance#                       INSTANCE_NUMBER,
              process#                             OS_PROCESS,
              xid                               TRANSACTIONID,
              scn                                         SCN,
-             to_nchar(substr(sqlbind,1,2000))       SQL_BIND,
-             to_nchar(substr(sqltext,1,2000))       SQL_TEXT,
+             --to_nchar(substr(sqlbind,1,2000))       SQL_BIND,
+             --to_nchar(substr(sqltext,1,2000))       SQL_TEXT,
              action#
       from
           sys.aud$ aud
