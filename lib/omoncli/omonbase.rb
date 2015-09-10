@@ -81,16 +81,41 @@ module Omoncli
 
   class Oraenv
 
-    attr_accessor :orauser, :orapass, :oraserv
-
-    CONFIGFILE = "#{ENV['HOME']}/.config/omoncli/oraenv.yaml"
+    attr_accessor :orauser, :orapass, :oraserv, :tnsuserpassword
 
     def initialize
       @orauser, @orapass, @oraserv= 'gameuser', 'xbnfntkm', 'grid_lgdbt'
+      @tnsuserpassword = {'DEFAULT'=>{'USER'=>'gameuser','PASSWORD'=>'xbnfntkm'}}
+
+      if File.file?(Oraenv::CONFIGFILE)
+        obj = YAML.load(File.open(Oraenv::CONFIGFILE))
+        @orauser, @orapass, @oraserv, @tnsuserpassword = obj.orauser, obj.orapass, obj.oraserv, obj.tnsuserpassword
+      else
+        savetofile
+      end
     end
 
     def to_yaml_properties
-      %w{ @orauser @orapass @oraserv }
+      %w{ @orauser @orapass @oraserv @tnsuserpassword }
+    end
+
+    def oraserv=(value)
+      @oraserv = value
+      savetofile
+    end
+
+    private
+
+    CONFIGFILE = "#{ENV['HOME']}/.config/omoncli/oraenv.yaml"
+    KEYNAME = ['DEFAULT', 'USER', 'PASSWORD']
+
+    def savetofile
+        if @tnsuserpassword.has_key?(@oraserv)
+          @orauser, @orapass = tnsuserpassword[@oraserv][Oraenv::KEYNAME[1]], tnsuserpassword[@oraserv][Oraenv::KEYNAME[2]]
+        else
+          @orauser, @orapass = tnsuserpassword[Oraenv::KEYNAME[0]][Oraenv::KEYNAME[1]], tnsuserpassword[Oraenv::KEYNAME[0]][Oraenv::KEYNAME[2]]
+        end
+       File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(self, f)}
     end
 
   end
@@ -102,11 +127,6 @@ module Omoncli
     protected
     def sqlplus(page)
       oraenv = Oraenv.new
-      if File.file?(Oraenv::CONFIGFILE)
-        oraenv = YAML.load(File.open(Oraenv::CONFIGFILE))
-      else
-        File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(oraenv, f)}
-      end
       page.service = oraenv.oraserv
       page.username = oraenv.orauser
       page.password = oraenv.orapass
