@@ -65,19 +65,12 @@ module Omoncli
       obj.dialog
       oraenv = Oraenv.new
       oraenv.oraserv = obj.service
-      File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(oraenv, f)}
       puts "oraservice is #{oraenv.oraserv}"
     end
 
     desc "showconn", "Show connect to Oracle Database"
     def showconn
       oraenv = Oraenv.new
-      if File.file?(Oraenv::CONFIGFILE)
-        oraenv = YAML.load(File.open(Oraenv::CONFIGFILE))
-      else
-        File.open(Oraenv::CONFIGFILE, "w") {|f| YAML.dump(oraenv, f)}
-      end
-
       puts "oraservice is #{oraenv.oraserv}"
       puts "orauser is #{oraenv.orauser}"
     end
