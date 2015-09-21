@@ -120,6 +120,13 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "lock_tree", "Current Lock Waits chains based on GV$LOCK"
+    def lock_tree
+      r = Sqlpage.new('template/session/lock_tree.erb')
+      vim(sqlplus(r))
+    end
+
+
   end
 
 end
