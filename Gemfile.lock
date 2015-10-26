@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    omoncli (0.1.16)
+    omoncli (0.1.17)
       highline
       thor
 
