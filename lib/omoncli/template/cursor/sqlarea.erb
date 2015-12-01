@@ -29,10 +29,15 @@ select inst_id,
   is_obsolete,
   is_bind_sensitive,
   is_bind_aware,
-  is_shareable,
   sql_plan_baseline
 from gv$sqlarea
 where sql_id = :vSQLID
 /
+
+
+prompt
+prompt 1 is_obsolete
+prompt 2 is_bind_sensitive
+prompt 3 is_bind_aware
 
 <%= render 'template/footer.erb' %>
