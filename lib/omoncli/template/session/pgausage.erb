@@ -21,7 +21,7 @@ a.pga_freeable_mem,
 a.pga_max_mem,
 b.status
 from gv$process a, gv$session b
-where a.addr = b.paddr and background is null
+where a.addr = b.paddr and a.inst_id = b.inst_id and background is null
 order by a.inst_id, a.pga_alloc_mem desc
 /
 
