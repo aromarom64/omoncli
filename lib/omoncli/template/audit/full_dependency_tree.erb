@@ -1,0 +1,45 @@
+<%= render 'template/header.erb' %>
+
+variable vobject varchar2(30);
+variable vowner varchar2(30);
+begin
+  :vobject := '<%= @object%>';
+  :vowner := '<%= @owner %>';
+end;
+/
+
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+
+col level for 999 heading 'L'
+col DEP_TREE for A45 heading 'DEP_TREE'
+col DEPENDENCY for A5 heading 'DEP'
+col referenced_type for A15 heading 'REFERENCED_TYPE'
+col REFERENCED_OBJ for A45 heading 'REFERENCED_OBJ'
+col referenced_owner for A30 heading 'REFERENCED_OWNER'
+col STATUS___LAST_DDL_TIME for A30 heading 'STATUS___LAST_DDL_TIME'
+
+
+spool <%= @filenamespool %> append
+prompt Owner: <%= @owner %>
+prompt Object: <%= @object%>
+
+select level,
+       lpad('  ', 2 * (level - 1)) || type || ' ' || owner || '.' || name   as DEP_TREE,
+       lpad('>', level, '>')                                                as DEPENDENCY,
+       referenced_type,
+       referenced_owner || '.' || referenced_name as REFERENCED_OBJ
+       , (select status || ' ' || to_char(last_ddl_time,'dd.mm.yyyy hh24:mi:ss')
+            from dba_objects o
+           where d.referenced_owner = o.owner
+             and d.referenced_name = o.object_name
+             and d.referenced_type = o.object_type) as "STATUS___LAST_DDL_TIME"
+  from dba_dependencies d
+connect by nocycle type = prior decode(referenced_type, 'TABLE', 'MATERIALIZED VIEW', referenced_type)
+       and owner        = prior referenced_owner
+       and name         = prior referenced_name
+ start with (owner, name) in ((upper(:vowner), upper(:vobject)))
+/
+
+<%= render 'template/footer.erb' %>
+
+

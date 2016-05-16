@@ -52,6 +52,21 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "full_dependency_tree", "Full dependency tree for db object"
+    long_desc <<-LONGDESC
+      Example: omoncli table full_dependency_tree --object="TABLE1" 
+    LONGDESC
+    option :owner, :type => :string, :default => 'TOPGAME5'
+    option :object, :type => :string, :required => true
+    def full_dependency_tree
+      Sqlpage.class_eval do
+        attr_accessor :object, :owner
+      end
+      r = Sqlpage.new('template/audit/full_dependency_tree.erb')
+      r.owner, r.object = options[:owner], options[:object]
+      vim(sqlplus(r))
+    end
+
   end
 
 end
