@@ -69,7 +69,7 @@ pro SQL_ID= <%= @sql_id %> Shared Pool statistics
 select s.inst_id                                                                           as INST,
        sum(s.EXECUTIONS)                                                                   as EXECS,
        max(s.last_load_time)                                                               as LAST_LOAD_TIME,
-       max(to_char(s.last_active_time, 'dd.mm.yyyy hh24:mi:ss'))                           as LAST_ACTIVE_TIME,
+       max(s.last_active_time)                                                             as LAST_ACTIVE_TIME,
        round(sum(s.elapsed_time)/decode(sum(s.EXECUTIONS),0,1,sum(s.EXECUTIONS)))          as ELA_PER_EXEC,
        round(sum(s.cpu_time)/decode(sum(s.EXECUTIONS),0,1,sum(s.EXECUTIONS)))              as CPU_PER_EXEC,
        round(sum(s.parse_calls)/decode(sum(s.EXECUTIONS),0,1,sum(s.EXECUTIONS)))           as PARSES_PER_EXEC,
@@ -102,7 +102,7 @@ group by s.inst_id,
          s.SQL_PATCH,
          s.OUTLINE_CATEGORY,
          s.SQL_PROFILE
-order by max(to_char(s.last_active_time, 'dd.mm.yyyy hh24:mi:ss'))
+order by max(s.last_active_time)
 --round(sum(s.elapsed_time)/decode(sum(s.EXECUTIONS),0,1,sum(s.EXECUTIONS))) desc
 /
 
