@@ -14,8 +14,12 @@ col event for a30 heading 'event'
 col last_call_et for 99999 heading 'last ca|ll et'
 col logon_time for A19 heading 'logon|time'
 col sql_child_number for 999 heading 'Sql|ChN'
+col machine for A12 heading 'Machine'
 
-set trim on trims on linesize 300 pagesize 4000 timing on;
+set trim on trims on lines 200 pagesize 1000 timi on;
+
+alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
+/
 
 spool <%= @filenamespool %> append
 
@@ -32,7 +36,8 @@ s.resource_consumer_group,
 s.service_name, s.sql_id,
 s.sql_child_number,
 s.program,
-s.event
+s.event,
+s.machine
 from GV$SESSION S
 where s.USERNAME is not null
 and s.type <> 'BACKGROUND'
