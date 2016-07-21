@@ -1,0 +1,49 @@
+<%= render 'template/header.erb' %>
+
+define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
+variable vbdate1 varchar2(30);
+variable vedate1 varchar2(30);
+variable vbdate2 varchar2(30);
+variable vedate2 varchar2(30);
+variable instnum1 number;
+variable instnum2 number;
+variable dbid number;
+variable vbid1 number;
+variable veid1 number;
+variable vbid2 number;
+variable veid2 number;
+begin
+    select dbid into :dbid from v$database;
+    :instnum1 := <%= @instance1 %>;
+    :vbdate1 := '<%= @bdate1 %>';
+    :vedate1 := '<%= @edate1 %>';
+    :instnum2 := <%= @instance2 %>;
+    :vbdate2 := '<%= @bdate2 %>';
+    :vedate2 := '<%= @edate2 %>';
+    select min(snap_id) into :vbid1 from dba_hist_snapshot
+    where begin_interval_time between to_date(:vbdate1, '&ash_time_format') and to_date(:vedate1, '&ash_time_format');
+    :veid1 := :vbid1 + 1;
+    select min(snap_id) into :vbid2 from dba_hist_snapshot
+    where begin_interval_time between to_date(:vbdate2, '&ash_time_format') and to_date(:vedate2, '&ash_time_format');
+    :veid2 := :vbid2 + 1;
+end;
+/
+
+set trim on trims on linesize 1500 pagesize 0 echo off termout off heading off;
+
+spool <%= @filenamespool %> append
+
+select output from table(sys.dbms_workload_repository.AWR_DIFF_REPORT_HTML(
+  dbid1 => :dbid,
+  inst_num1 => :instnum1,
+  bid1 => :vbid1,
+  eid1 => :veid1,
+  dbid2 => :dbid,
+  inst_num2 => :instnum2,
+  bid2 => :vbid2,
+  eid2 => :veid2
+))
+/
+
+
+<%= render 'template/footer.erb' %>

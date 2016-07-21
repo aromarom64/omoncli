@@ -1,0 +1,38 @@
+<%= render 'template/header.erb' %>
+
+define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
+variable oldest varchar2(30);
+variable latest varchar2(30);
+variable instnum number;
+variable dbid number;
+variable vbid number;
+variable veid number;
+variable vrpt number;
+begin
+    select dbid into :dbid from v$database;
+    :instnum := <%= @instance %>;
+    :oldest := '<%= @bdate %>';
+    :latest := '<%= @edate %>';
+    select min(snap_id) into :vbid from dba_hist_snapshot
+    where begin_interval_time between to_date(:oldest, '&ash_time_format')
+    and to_date(:latest, '&ash_time_format');
+    :veid := :vbid + 1;
+    :vrpt := 8;
+end;
+/
+
+set trim on trims on linesize 1500 pagesize 0 echo off termout off heading off;
+
+spool <%= @filenamespool %> append
+
+select output from table(sys.dbms_workload_repository.AWR_REPORT_HTML(
+  l_dbid => :dbid,
+  l_inst_num => :instnum,
+  l_bid => :vbid,
+  l_eid => :veid,
+  l_options => :vrpt
+))
+/
+
+
+<%= render 'template/footer.erb' %>

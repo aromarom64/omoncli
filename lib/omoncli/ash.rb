@@ -7,7 +7,7 @@ module Omoncli
 
     desc "ash_report_html", "ash_report_html"
     long_desc <<-LONGDESC
-      omoncli ash ash_report_html --instance=1 --bdate="#{DateTime.now.strftime('%d-%m-%Y %H:00:00')}" --edate="#{DateTime.now.strftime('%d-%m-%Y %H:00:00')}"
+      omoncli ash ash_report_html --instance=1 --bdate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}"
     LONGDESC
     option :instance, :required => true
     option :bdate, :required => true
@@ -98,6 +98,42 @@ module Omoncli
       r.bdate, r.edate = options[:bdate], options[:edate]
       vim(sqlplus(r))
     end
+
+    desc "awr_report_html", "awr_report_html"
+    long_desc <<-LONGDESC
+      omoncli ash awr_report_html --instance=1 --bdate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}"
+    LONGDESC
+    option :instance, :required => true
+    option :bdate, :required => true
+    option :edate, :required => true
+    def awr_report_html
+      Sqlpage.class_eval do
+        attr_accessor :instance, :bdate, :edate
+      end
+      r = Sqlpage.new('template/ash/awr_report_html.erb','.html')
+      r.instance, r.bdate, r.edate = options[:instance], options[:bdate], options[:edate]
+      firefox(sqlplus(r))
+    end
+
+    desc "awr_diff_report_html", "awr_diff_report_html"
+    long_desc <<-LONGDESC
+      omoncli ash awr_diff_report_html --instance1=1 --bdate1="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate1="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}" --instance2=2 --bdate2="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate2="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}"
+    LONGDESC
+    option :instance1, :required => true
+    option :bdate1, :required => true
+    option :edate1, :required => true
+    option :instance2, :required => true
+    option :bdate2, :required => true
+    option :edate2, :required => true
+    def awr_diff_report_html
+      Sqlpage.class_eval do
+        attr_accessor :instance1, :bdate1, :edate1, :instance2, :bdate2, :edate2
+      end
+      r = Sqlpage.new('template/ash/awr_diff_report_html.erb','.html')
+      r.instance1, r.bdate1, r.edate1, r.instance2, r.bdate2, r.edate2 = options[:instance1], options[:bdate1], options[:edate1], options[:instance2], options[:bdate2], options[:edate2]
+      firefox(sqlplus(r))
+    end
+
 
   end
 
