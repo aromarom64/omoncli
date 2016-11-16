@@ -54,7 +54,7 @@ module Omoncli
 
     attr_reader :service
 
-    TNSNAMES = "#{ENV['HOME']}/gitrepos/oracle/tnsnames.ora"
+    TNSNAMES = "#{ENV['TNS_ADMIN']}/tnsnames.ora"
 
     def initialize
       @tns = []
