@@ -38,13 +38,12 @@ module Omoncli
       omoncli cursor sqltext --sql_id="4642q2v2331zj"
     LONGDESC
     option :sql_id, :required => true
-    option :instance, :type => :numeric, :default => 1, :enum => [1,2]
     def sqltext
       Sqlpage.class_eval do
-        attr_accessor :sql_id, :instance
+        attr_accessor :sql_id
       end
       r = Sqlpage.new('template/cursor/sqltext.erb')
-      r.sql_id,r.instance = options[:sql_id],options[:instance]
+      r.sql_id = options[:sql_id]
       vim(sqlplus(r))
     end
 

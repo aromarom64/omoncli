@@ -4,7 +4,6 @@ variable vsqlid varchar2(30);
 variable vinstance number;
 begin
   :vsqlid := '<%= @sql_id %>';
-  :vinstance:= '<%= @instance %>';
 end;
 /
 
@@ -15,13 +14,20 @@ set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
 
 spool <%= @filenamespool %> append
 prompt sql_id: <%= @sql_id %>
-prompt instance: <%= @instance %>
 
-select sql_text
-from  gv$sqltext_with_newlines
-where inst_id = :vinstance
-and sql_id = :vsqlid
-order by piece
+
+set lines 200
+
+col sql_fulltext for a100
+col sql_id for a13
+
+select distinct sql_id, dbms_lob.substr(sql_fulltext, 4000) as sql_fulltext
+  from gv$sqlarea a
+ where sql_id = :vsqlid
+union
+select distinct sql_id, dbms_lob.substr(h.sql_text, 4000) as sql_fulltext
+  from dba_hist_sqltext h
+ where sql_id = :vsqlid
 /
 
 <%= render 'template/footer.erb' %>
