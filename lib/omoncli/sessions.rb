@@ -15,6 +15,17 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "activeex", "Active sessions"
+    option :system, :required => false, :type => :boolean
+    def activeex
+      Sqlpage.class_eval do
+        attr_accessor :system
+      end
+      r = Sqlpage.new('template/session/activeex.erb')
+      r.system = options[:system]
+      vim(sqlplus(r))
+    end
+
     desc "wait_tree", "ASH wait tree for arbitrary condition"
     long_desc <<-LONGDESC
       ASH wait tree for arbitrary condition
