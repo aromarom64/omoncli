@@ -13,13 +13,16 @@ begin
     :instnum := <%= @instance %>;
     :oldest := '<%= @bdate %>';
     :latest := '<%= @edate %>';
-    select min(snap_id) into :vbid from dba_hist_snapshot
-    where begin_interval_time between to_date(:oldest, '&ash_time_format')
-    and to_date(:latest, '&ash_time_format');
-    :veid := :vbid + 1;
+    select max(snap_id) into :vbid from dba_hist_snapshot where begin_interval_time <= to_date(:oldest, '&ash_time_format');
+    select max(snap_id) into :veid from dba_hist_snapshot where end_interval_time <= to_date(:latest, '&ash_time_format');
     :vrpt := 8;
 end;
 /
+
+print oldest
+print latest
+print vbid
+print veid
 
 set trim on trims on linesize 1500 pagesize 0 echo off termout off heading off;
 
