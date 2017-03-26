@@ -1,3 +1,3 @@
 module Omoncli
-  VERSION = '0.10'
+  VERSION = '0.11'
 end
