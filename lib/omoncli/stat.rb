@@ -158,25 +158,26 @@ module Omoncli
       vim(sqlplus(r))
     end
 
-    desc "redo_gen_top", "Redo generation SQL top estimation from AWR history"
+    desc "redogen_sql_hist", "Redo generation SQL top estimation from AWR history"
     long_desc <<-LONGDESC
       omoncli stat redo_gen_top --bdate="#{(DateTime.now-1).strftime('%d-%m-%Y %H:00:00')}" --edate="#{DateTime.now.strftime('%d-%m-%Y %H:00:00')}" --numtop=20
     LONGDESC
     option :numtop, :default => 20, :type => :numeric
     option :bdate, :required => true, :type => :string
     option :edate, :required => true, :type => :string
-    def redo_gen_top
+    option :order, :type => :string,  :default => 'buffer', :enum => ['buffer','rows']
+    def redogen_sql_hist
       Sqlpage.class_eval do
-        attr_accessor :numtop, :bdate, :edate
+        attr_accessor :numtop, :bdate, :edate, :order
       end
-      r = Sqlpage.new('template/stat/redo_gen_top.erb')
-      r.numtop, r.bdate, r.edate = options[:numtop], options[:bdate], options[:edate]
+      r = Sqlpage.new('template/stat/redogen_sql_hist.erb')
+      r.numtop, r.bdate, r.edate, r.order = options[:numtop], options[:bdate], options[:edate], options[:order]
       vim(sqlplus(r))
     end
 
     desc "redogen_obj_hist", "Redo generation SQL top estimation from AWR history"
     long_desc <<-LONGDESC
-      omoncli stat redo_gen_top --bdate="#{(DateTime.now-1).strftime('%d-%m-%Y %H:00:00')}" --edate="#{DateTime.now.strftime('%d-%m-%Y %H:00:00')}" --numtop=20
+      omoncli stat redogen_obj_hist --bdate="#{(DateTime.now-1).strftime('%d-%m-%Y %H:00:00')}" --edate="#{DateTime.now.strftime('%d-%m-%Y %H:00:00')}" --numtop=20
     LONGDESC
     option :numtop, :default => 20, :type => :numeric
     option :bdate, :required => true, :type => :string

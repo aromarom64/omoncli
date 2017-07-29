@@ -1,22 +1,23 @@
 <%= render 'template/header.erb' %>
 
 define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
-variable oldest varchar2(30);
-variable latest varchar2(30);
-variable vnumtop number;
-begin
-    :oldest := '<%= @bdate %>';
-    :latest := '<%= @edate %>';
-    :vnumtop := '<%= @numtop %>';
-end;
-/
+define bdate = '<%= @bdate %>';
+define edate = '<%= @edate %>';
+define numtop = '<%= @numtop %>';
+<% if @order == 'buffer' %>
+  define order = 'order by buffer_gets_delta desc nulls last, rows_proc_delta desc'
+<% elsif @order == 'rows' %>
+  define order = 'order by rows_proc_delta desc nulls last, buffer_gets_delta desc'
+<% end %>
+
 
 set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
 
 spool <%= @filenamespool %> append
-prompt numtop: <%= @numtop%>
-prompt Bdate: <%= @bdate%>
-prompt Edate: <%= @edate%>
+prompt numtop: &numtop
+prompt Bdate:  &bdate
+prompt Edate:  &edate
+prompt Order:  &order
 
 --
 -- Redo generation SQL top estimation from AWR history
@@ -35,9 +36,9 @@ col buffer_gets_range for a12
 select * from (
 SELECT 
       dhss.instance_number inst_id,
-      to_char(min(begin_interval_time),'DD-Mon-YY HH24:MI') || ' - ' ||
-       to_char(max(begin_interval_time),'DD-Mon-YY HH24:MI') as WHEN,
-      dhcn.command_name as COMMAND,					-- 11.2+
+      to_char(min(begin_interval_time),'DD-MM-YY HH24:MI') || ' - ' ||
+      to_char(max(begin_interval_time),'DD-MM-YY HH24:MI') as WHEN,
+      dhcn.command_name as COMMAND,        -- 11.2+
       sum(executions_delta) exec_delta,
       sum(rows_processed_delta) rows_proc_delta,
       sum(dhss.buffer_gets_delta) buffer_gets_delta,
@@ -53,16 +54,15 @@ WHERE dhst.command_type not in (3,47) -- != SELECT, PL/SQL EXECUTE
   AND dhss.instance_Number = dhs.instance_number
   AND dhss.sql_id = dhst.sql_id
   and dhst.command_type = dhcn.command_type                           -- 11.2+
-  AND begin_interval_time BETWEEN to_date(:oldest, '&ash_time_format')
-                              AND to_date(:latest, '&ash_time_format')
+  AND begin_interval_time BETWEEN to_date('&bdate', '&ash_time_format')
+                              AND to_date('&edate', '&ash_time_format')
 GROUP BY 
        dhcn.command_name,                                             -- 11.2+
          replace(dbms_lob.substr(sql_text, 100, 1),chr(10),' '),
          dhss.instance_number,
          dhss.sql_id
---order by buffer_gets_delta desc, rows_proc_delta desc
-order by rows_proc_delta desc, buffer_gets_delta desc
-) where rownum <= :vnumtop
+&order         
+) where rownum <= &numtop
 /
 
 
