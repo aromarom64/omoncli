@@ -1,0 +1,58 @@
+<%= render 'template/header.erb' %>
+
+define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
+define filter = '<%= @filter %>';
+define numtop = '<%= @numtop %>';
+define hist = '<%= @hist %>';
+<% if @hist %>
+  define histtable = 'select s.instance_number as inst_id, s.* from dba_hist_active_sess_history s, dba_hist_snapshot d where s.instance_number=d.instance_number and s.snap_id=d.snap_id and'
+<% else %>
+  define histtable = 'select * from gv$active_session_history where'
+<% end %>
+
+
+spool <%= @filenamespool %> append
+prompt numtop: &numtop
+prompt Filter: &filter
+prompt Hist:   &hist
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF trims on
+
+col inst_id for 99 hea #i
+col min_sample_time for a30
+col max_sample_time for a30
+
+with ash as (&histtable &filter)
+select * from (
+select inst_id,
+       min(sample_time)                                        as min_sample_time,
+       max(sample_time)                                        as max_sample_time,
+       sql_id,
+       sql_plan_hash_value                                     as plan_hash_value,
+       count(distinct sql_exec_id)                             as execs,
+       round(max(temp_space_allocated)/1024/1024)              as max_temp_space,
+       round(max(temp_space_allocated)/(select sum(user_bytes) from dba_temp_files)*100) as "TEMP%",
+       round(max(pga_allocated)/1024/1024)                     as max_pga,
+       max(px) - 1                                             as px
+  from (select inst_id                             as inst_id,
+               sample_time,
+               sql_id,
+               sql_plan_hash_value,
+               sql_exec_id,
+               sum(temp_space_allocated)           as temp_space_allocated,
+               sum(pga_allocated)                  as pga_allocated,
+               count(distinct session_serial#) - 1 as px
+         from ash
+         where sql_exec_id > 0
+         group by inst_id,
+                  sample_time,
+                  sql_id,
+                  sql_plan_hash_value,
+                  sql_exec_id
+        )
+ group by inst_id, sql_id, sql_plan_hash_value
+ order by max(temp_space_allocated) desc nulls last)
+where rownum <= &numtop
+/
+
+<%= render 'template/footer.erb' %>

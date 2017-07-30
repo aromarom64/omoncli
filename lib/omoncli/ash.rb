@@ -134,6 +134,60 @@ module Omoncli
       firefox(sqlplus(r))
     end
 
+    desc "ash_io_waits", "ASH I/O waits sql_id"
+    long_desc <<-LONGDESC
+      omoncli ash ash_io_waits --hist --filter="begin_interval_time between to_date(''#{(DateTime.now-2.0/24).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'') and to_date(''#{(DateTime.now).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'')"
+    LONGDESC
+    option :numtop, :default => 20, :type => :numeric
+    option :order, :type => :string,  :default => 'blocks', :enum => ['blocks','waits','reqs']
+    option :filter, :default => 'sample_time > sysdate - 1/24', :type => :string
+    option :hist, :default => false, :type => :boolean
+
+    def ash_io_waits
+      Sqlpage.class_eval do
+        attr_accessor :numtop, :filter, :order, :hist
+      end
+      r = Sqlpage.new('template/ash/ash_io_waits.erb')
+      r.numtop, r.order, r.filter, r.hist = options[:numtop], options[:order], options[:filter], options[:hist]
+      vim(sqlplus(r))
+    end
+
+
+    desc "ash_iobj_waits", "ASH I/O waits obj"
+    long_desc <<-LONGDESC
+      omoncli ash ash_iobj_waits --hist --filter="begin_interval_time between to_date(''#{(DateTime.now-2.0/24).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'') and to_date(''#{(DateTime.now).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'')"
+    LONGDESC
+    option :numtop, :default => 20, :type => :numeric
+    option :order, :type => :string,  :default => 'blocks', :enum => ['blocks','waits','reqs']
+    option :filter, :default => 'sample_time > sysdate - 1/24', :type => :string
+    option :hist, :default => false, :type => :boolean
+
+    def ash_iobj_waits
+      Sqlpage.class_eval do
+        attr_accessor :numtop, :filter, :order, :hist
+      end
+      r = Sqlpage.new('template/ash/ash_iobj_waits.erb')
+      r.numtop, r.order, r.filter, r.hist = options[:numtop], options[:order], options[:filter], options[:hist]
+      vim(sqlplus(r))
+    end
+
+
+    desc "ash_tempu_by_sql", "ASH Temp usage by sql_id"
+    long_desc <<-LONGDESC
+      omoncli ash ash_tempu_by_sql --hist --filter="begin_interval_time between to_date(''#{(DateTime.now-2.0/24).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'') and to_date(''#{(DateTime.now).strftime('%d-%m-%Y %H:00:00')}'',''dd-mm-yyyy HH24:MI:SS'')"
+    LONGDESC
+    option :numtop, :default => 20, :type => :numeric
+    option :filter, :default => 'sample_time > sysdate - 1/24', :type => :string
+    option :hist, :default => false, :type => :boolean
+
+    def ash_tempu_by_sql
+      Sqlpage.class_eval do
+        attr_accessor :numtop, :filter, :hist
+      end
+      r = Sqlpage.new('template/ash/ash_tempu_by_sql.erb')
+      r.numtop, r.filter, r.hist = options[:numtop], options[:filter], options[:hist]
+      vim(sqlplus(r))
+    end
 
   end
 

@@ -11,20 +11,13 @@ define numtop = '<%= @numtop %>';
 <% end %>
 
 
-set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
-
 spool <%= @filenamespool %> append
 prompt numtop: &numtop
 prompt Bdate:  &bdate
 prompt Edate:  &edate
 prompt Order:  &order
 
---
--- Redo generation SQL top estimation from AWR history
--- Usage: SQL> @redogen_sql_hist "03-Sep-13 16:00" "03-Sep-13 17:00" 10
---
-
-set echo off feedback off heading on timi on pages 1000 lines 300 VERIFY OFF
+set echo off feedback off heading on timi on pages 1000 lines 300 VERIFY OFF trims on
 
 col WHEN for a34
 col INST_ID for 9999999

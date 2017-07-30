@@ -1,23 +1,40 @@
 <%= render 'template/header.erb' %>
 
-col username for A20 tru
-col inst_id for 999 heading 'Id'
-col sid for 9999 heading 'Sid'
-col serial# for 99999 heading 'Serial'
-col segtype for A10 heading 'Segtype'
-col extents for 9999 heading 'Extents'
-col blocks for 999999 heading 'Blocks'
-col segfile# for 999 heading 'Seg|file'
-
-set trim on trims on linesize 160 pagesize 4000 timing on;
+set echo off feedback off heading on timi on pages 1000 lines 400 VERIFY OFF trims on
 
 spool <%= @filenamespool %> append
 
-select /*+ ORDERED */
-tu.inst_id, tu.username, tu.sql_id, s.sid, s.serial#, s.sql_id sql_id_c, --s.sql_address,
-tu.segtype,tu.extents, tu.blocks, tu.segfile#
-from gv$tempseg_usage tu, gv$session s
-where tu.session_addr=s.saddr and tu.session_num=s.serial#
+col sql_text for a100
+col username for a20
+col osuser for a15
+col inst_id for 99 hea #i
+
+
+SELECT 
+  NVL(a.username, 'SUMMARY') as username,
+  a.sid,
+  a.serial#,
+  b.tablespace,
+  b.segtype,
+  sum(b.blocks) as BLOCKS,
+  a.osuser,
+  a.program,
+  a.sql_id,
+  a.sql_child_number,
+  a.sql_exec_start,
+  q.plan_hash_value,
+  q.sql_text
+FROM gv$session a, gv$tempseg_usage b, gv$sql q
+WHERE a.saddr = b.session_addr
+  and q.address = a.sql_address
+  and q.inst_id = a.inst_id
+  and q.hash_value = a.sql_hash_value
+  and q.CHILD_NUMBER = a.SQL_CHILD_NUMBER
+  and a.INST_ID = b.INST_ID
+GROUP by GROUPING SETS((a.sid, a.username, a.serial#, a.osuser, a.program, a.sql_id, a.sql_child_number, a.sql_exec_start, q.sql_text, q.plan_hash_value, b.tablespace, b.segtype, sysdate),(sysdate))
+/
+
+select inst_id, username, session_num, sql_id, tablespace, contents, segtype, blocks, sql_id_tempseg from gv$tempseg_usage
 /
 
 <%= render 'template/footer.erb' %>

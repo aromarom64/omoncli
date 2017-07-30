@@ -4,16 +4,12 @@ define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
 define bdate = '<%= @bdate %>';
 define edate = '<%= @edate %>';
 define numtop = '<%= @numtop %>';
-set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF trims on
 
 spool <%= @filenamespool %> append
 prompt numtop: &numtop
 prompt Bdate:  &bdate
 prompt Edate:  &edate
---
--- Redo generation SQL top estimation from AWR history
--- Usage: SQL> @redogen_sql_hist "03-Sep-13 16:00" "03-Sep-13 17:00" 10
---
 
 col WHEN for a34
 col INST_ID for 9999999
