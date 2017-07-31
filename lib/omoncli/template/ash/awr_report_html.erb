@@ -1,5 +1,9 @@
 <%= render 'template/header.erb' %>
 
+whenever oserror exit 9;
+whenever sqlerror exit sql.sqlcode;
+
+set serveroutput on feedback off
 define ash_time_format = 'dd-mm-yyyy HH24:MI:SS';
 variable oldest varchar2(30);
 variable latest varchar2(30);
@@ -9,20 +13,27 @@ variable vbid number;
 variable veid number;
 variable vrpt number;
 begin
-    select dbid into :dbid from v$database;
-    :instnum := <%= @instance %>;
-    :oldest := '<%= @bdate %>';
-    :latest := '<%= @edate %>';
-    select max(snap_id) into :vbid from dba_hist_snapshot where begin_interval_time <= to_date(:oldest, '&ash_time_format');
-    select max(snap_id) into :veid from dba_hist_snapshot where end_interval_time <= to_date(:latest, '&ash_time_format');
-    :vrpt := 8;
+  :vrpt := 8;
+  select dbid into :dbid from v$database;
+  :instnum := <%= @instance %>;
+  :oldest := '<%= @bdate %>';
+  :latest := '<%= @edate %>';
+  select min(snap_id), max(snap_id) into :vbid, :veid
+  from dba_hist_snapshot 
+  where begin_interval_time between to_date(:oldest, '&ash_time_format') and to_date(:latest, '&ash_time_format');
+  dbms_output.put_line('Begin snap_id: ' || :vbid);
+  dbms_output.put_line('End snap_id: ' || :veid);
+  dbms_output.put_line('Begin date: ' || :oldest);
+  dbms_output.put_line('End date: ' || :latest);
+  dbms_output.put_line('Current sysdate: ' || sysdate);
+  if (:vbid is null) or (:veid is null) then
+    RAISE_APPLICATION_ERROR(-20000, 'Snap_id is null');
+  elsif :veid <= :vbid then
+    RAISE_APPLICATION_ERROR(-20001, 'Date range is invalid');
+  end if;
 end;
 /
 
-print oldest
-print latest
-print vbid
-print veid
 
 set trim on trims on linesize 1500 pagesize 0 echo off termout off heading off;
 

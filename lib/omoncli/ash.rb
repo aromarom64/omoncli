@@ -7,7 +7,7 @@ module Omoncli
 
     desc "ash_report_html", "ash_report_html"
     long_desc <<-LONGDESC
-      omoncli ash ash_report_html --instance=1 --bdate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}"
+      omoncli ash ash_report_html --instance=1 --bdate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}"
     LONGDESC
     option :instance, :required => true
     option :bdate, :required => true
@@ -101,7 +101,7 @@ module Omoncli
 
     desc "awr_report_html", "awr_report_html"
     long_desc <<-LONGDESC
-      omoncli ash awr_report_html --instance=1 --bdate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}"
+      omoncli ash awr_report_html --instance=1 --bdate="#{(DateTime.now - Rational(2, 24)).strftime('%d-%m-%Y %H:00:00')}" --edate="#{(DateTime.now - Rational(1, 24)).strftime('%d-%m-%Y %H:00:00')}"
     LONGDESC
     option :instance, :required => true
     option :bdate, :required => true

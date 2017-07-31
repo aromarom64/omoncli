@@ -23,7 +23,7 @@ SELECT
   a.sql_child_number,
   a.sql_exec_start,
   q.plan_hash_value,
-  q.sql_text
+  substr(rpad(q.sql_text, 80, '*'), 1, 80)
 FROM gv$session a, gv$tempseg_usage b, gv$sql q
 WHERE a.saddr = b.session_addr
   and q.address = a.sql_address
@@ -31,7 +31,30 @@ WHERE a.saddr = b.session_addr
   and q.hash_value = a.sql_hash_value
   and q.CHILD_NUMBER = a.SQL_CHILD_NUMBER
   and a.INST_ID = b.INST_ID
-GROUP by GROUPING SETS((a.sid, a.username, a.serial#, a.osuser, a.program, a.sql_id, a.sql_child_number, a.sql_exec_start, q.sql_text, q.plan_hash_value, b.tablespace, b.segtype, sysdate),(sysdate))
+GROUP by GROUPING SETS((a.sid, a.username, a.serial#, a.osuser, a.program, a.sql_id, a.sql_child_number, a.sql_exec_start, substr(rpad(q.sql_text, 80, '*'), 1, 80), q.plan_hash_value, b.tablespace, b.segtype, sysdate),(sysdate))
+/
+
+select tu.INST_ID,
+       tu.USERNAME,
+       NVL(s.SQL_ID, s.prev_sql_id) SQL_ID,
+       substr(rpad(sa.SQL_TEXT, 80, '*'), 1, 80) as TEXT80,
+       tu.CONTENTS,
+       tu.SEGTYPE,
+       count(distinct tu.SESSION_ADDR) PROC_COUNT,
+       round(sum(tu.BLOCKS * t.BLOCK_SIZE) / 1024 / 1024) size_MB
+  from gv$tempseg_usage tu, gv$session s, dba_tablespaces t, gv$sqlarea sa
+ where tu.SESSION_ADDR = s.SADDR
+   and tu.INST_ID = s.INST_ID
+   and s.SQL_ID = sa.SQL_ID
+   and s.INST_ID = sa.INST_ID
+   and tu.TABLESPACE = t.TABLESPACE_NAME
+ group by tu.INST_ID,
+          tu.USERNAME,
+          NVL(s.SQL_ID, s.prev_sql_id),
+          substr(rpad(sa.SQL_TEXT, 80, '*'), 1, 80),
+          tu.CONTENTS,
+          tu.SEGTYPE
+ order by sum(tu.BLOCKS) desc
 /
 
 select inst_id, username, session_num, sql_id, tablespace, contents, segtype, blocks, sql_id_tempseg from gv$tempseg_usage
