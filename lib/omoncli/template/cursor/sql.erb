@@ -9,12 +9,13 @@ end;
 alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
 /
 
-set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF trim on trims on
 
 spool <%= @filenamespool %> append
 pro
 pro SQL_ID= <%= @sql_id %>
 
+select /*+ FIRST_ROWS(50) */ * from (
 select inst_id,
 plan_hash_value,
 child_number,
@@ -25,12 +26,15 @@ is_obsolete,
 is_bind_sensitive,
 is_bind_aware,
 is_shareable,
-sql_plan_baseline
+sql_plan_baseline,
+row_number()over(order by child_number) rn
 from gv$sql
 where sql_id = :vSQLID
+) where rn <= 50
+order by child_number
 /
 
-set feedback off heading on timi on pages 200 lines 500 echo off  VERIFY OFF
+set feedback off heading on timi on pages 200 lines 500 echo off  VERIFY OFF trim on trims on
 
 col INST for 9999
 col EXECS for 999999999999
