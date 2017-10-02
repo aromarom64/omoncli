@@ -27,6 +27,14 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "fast_start_transactions", "fast_start_transactions"
+    long_desc <<-LONGDESC
+      Example: omoncli undo fast_start_transactions
+    LONGDESC
+    def fast_start_transactions
+      r = Sqlpage.new('template/undo/fast_start_transactions.erb')
+      vim(sqlplus(r))
+    end
 
   end
 
