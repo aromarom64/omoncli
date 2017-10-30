@@ -191,6 +191,15 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "redolog_switches", "redolog_switches"
+    long_desc <<-LONGDESC
+      v$log_history
+      Example: omoncli stat redolog_switches
+    LONGDESC
+    def redolog_switches
+      r = Sqlpage.new('template/stat/redolog_switches.erb')
+      vim(sqlplus(r))
+    end
 
   end
 
