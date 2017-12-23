@@ -34,4 +34,12 @@ where ( b.start_time > (SYSDATE - :vDay) )
 order by b.start_time desc
 /
 
+col status for a30 tru
+col operation for a10 tru
+
+select command_id,operation,status,start_time,end_time,input_bytes,output_bytes,object_type
+from v$rman_status 
+where status != 'COMPLETED' and status != 'RUNNING' and start_time > (SYSDATE - :vDay)
+/
+
 <%= render 'template/footer.erb' %>

@@ -1,15 +1,17 @@
 <%= render 'template/header.erb' %>
 
-variable vSQLID varchar2(30);
-begin
-  :vSQLID := '<%= @sql_id %>';
-end;
-/
+--variable vSQLID varchar2(30);
+--begin
+--  :vSQLID := '<%= @sql_id %>';
+--end;
+--/
 
 alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
 /
 
 set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF trim on trims on
+
+col sql_plan_baseline for a30
 
 spool <%= @filenamespool %> append
 pro
@@ -29,7 +31,7 @@ is_shareable,
 sql_plan_baseline,
 row_number()over(order by child_number) rn
 from gv$sql
-where sql_id = :vSQLID
+where sql_id = '<%= @sql_id %>'
 ) where rn <= 50
 order by child_number
 /
@@ -98,7 +100,7 @@ select s.inst_id                                                                
        s.OUTLINE_CATEGORY,
        s.SQL_PROFILE
   from gv$sql s
- where s.sql_id = :vSQLID
+ where s.sql_id = '<%= @sql_id %>'
 group by s.inst_id,
          s.PLAN_HASH_VALUE,
 --         s.FULL_PLAN_HASH_VALUE,
@@ -109,5 +111,61 @@ group by s.inst_id,
 order by max(s.last_active_time)
 --round(sum(s.elapsed_time)/decode(sum(s.EXECUTIONS),0,1,sum(s.EXECUTIONS))) desc
 /
+
+select st.inst_id as "INST",
+    st.executions as execs,
+    st.plan_hash_value as plan,
+    round(st.elapsed_time/decode(st.executions,0,1,st.executions)) as ela_per_exec,
+    round(st.cpu_time/decode(st.executions,0,1,st.executions)) as cpu_per_exec,
+    round(st.buffer_gets/decode(st.executions,0,1,st.executions)) as gets_per_exec,
+    round(st.concurrency_wait_time/decode(st.executions,0,1,st.executions)) as conc_per_exec,
+    round(st.cluster_wait_time/decode(st.executions,0,1,st.executions)) as clu_per_exec,
+    round(st.user_io_wait_time/decode(st.executions,0,1,st.executions)) as uio_per_exec,
+    round(st.physical_read_bytes/decode(st.executions,0,1,st.executions)/1024/1024) as read_mb_per_exec,
+    round(st.physical_read_requests/decode(st.executions,0,1,st.executions)) as reads_per_exec,
+    round(st.disk_reads/decode(st.executions,0,1,st.executions)/1024/1024) as disk_reads_per_exec,
+    round(st.physical_write_bytes/decode(st.executions,0,1,st.executions)/1024/1024) as writes_mb_per_exec,
+    round(st.physical_write_requests/decode(st.executions,0,1,st.executions)) as writes_per_exec,
+    round(st.direct_writes/decode(st.executions,0,1,st.executions)) as direct_writes_per_exec,
+    round(st.rows_processed/decode(st.executions,0,1,st.executions)) as rows_per_exec,
+    round(st.px_servers_executions/decode(st.executions,0,1,st.executions)) as px_per_exec
+from gv$sqlstats st
+where sql_id = '<%= @sql_id %>'
+/
+
+with plan_hashs as
+ (select 'AWR' as SRC,
+         SQL_ID,
+         to_number(extractvalue(xmltype(other_xml), '/*/info[@type = "plan_hash_full"]')) as full_plan_hash_value,
+         p.PLAN_HASH_VALUE,
+         to_number(extractvalue(xmltype(other_xml), '/*/info[@type = "plan_hash_2"]'))    as plan_hash_2,
+         p.TIMESTAMP
+    from dba_hist_sql_plan p
+   where p.other_xml is not null
+     and sql_id = '<%= @sql_id %>'
+  union
+  select 'SQL' as SRC,
+         sql_id,
+         full_plan_hash_value,
+         plan_hash_value,
+         to_number(extractvalue(xmltype(other_xml), '/*/info[@type = "plan_hash_2"]'))    as plan_hash_2,
+         max(TIMESTAMP)
+    from gv$sql_plan
+   where sql_id = '<%= @sql_id %>'
+     and other_xml is not null
+   group by sql_id, full_plan_hash_value, plan_hash_value, to_number(extractvalue(xmltype(other_xml), '/*/info[@type = "plan_hash_2"]')))
+select SRC,
+       sql_id,
+       full_plan_hash_value,
+       plan_hash_value,
+       plan_hash_2,
+       to_char(TIMESTAMP,'dd.mm.yyyy hh24:mi:ss') as TIMESTAMP
+  from plan_hashs
+ where full_plan_hash_value = nvl(null, full_plan_hash_value)
+   and plan_hash_value = nvl(null, plan_hash_value)
+order by 3, 4
+/
+
+
 
 <%= render 'template/footer.erb' %>

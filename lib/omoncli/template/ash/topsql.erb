@@ -1,18 +1,11 @@
 <%= render 'template/header.erb' %>
 
-variable vminutes number;
-variable vtopnumber number;
-begin
-  :vminutes := <%= @minutes %>;
-  :vtopnumber := <%= @topnum %>;
-end;
-/
-
 alter session set nls_date_format = 'YYYY-MM-DD HH24:MI:SS'
 /
 
-set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF
+set echo off feedback off heading on timi on pages 1000 lines 500 VERIFY OFF trim on trimspool on
 col wait_profile for a40
+col sql_text for a100
 
 spool <%= @filenamespool %> append
 prompt Minutes: <%= @minutes %>
@@ -27,20 +20,23 @@ WITH sql_class AS
            ELSE 'WAIT' END state
     from gv$active_session_history
     where   session_type IN ( 'FOREGROUND')
-    and sample_time  between trunc(sysdate,'MI') - :vminutes/24/60 and trunc(sysdate,'MI') )
+    and sample_time  between trunc(sysdate,'MI') - <%= @minutes %>/24/60 and trunc(sysdate,'MI') )
     group by sql_id, state),
      ranked_sqls AS
 (select SQL_ID, rank () over (order by sum(occur)desc) xrank
 from sql_class
-group by sql_id )
-select sql_id, wait_profile from (
+group by sql_id ),
+topsql as (
+select sql_id, wait_profile, xrank from (
 select sc.sql_id, rs.xrank,
 rtrim(xmlagg(xmlelement(s, sc.state || '(' || sc.occur, '), ').extract('//text()') order by sc.occur desc),', ') as wait_profile
 from sql_class sc, ranked_sqls rs
 where rs.sql_id = sc.sql_id
-and rs.xrank <= :vtopnumber
-group by sc.sql_id, rs.xrank
-order by rs.xrank)
+and rs.xrank <= <%= @topnum %>
+group by sc.sql_id, rs.xrank))
+select a.sql_id, a.wait_profile, (select distinct substr(sql_text,1,100) from gv$sql b where a.sql_id =b.sql_id) sql_text
+from topsql a
+order by a.xrank
 /
 
 <%= render 'template/footer.erb' %>

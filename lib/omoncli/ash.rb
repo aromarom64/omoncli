@@ -26,7 +26,7 @@ module Omoncli
       omoncli ash topsql --minute=10 --topnum=10
     LONGDESC
     option :minutes, :default => 10, :type => :numeric
-    option :topnum, :default => 10, :type => :numeric
+    option :topnum, :default => 20, :type => :numeric
     def topsql
       Sqlpage.class_eval do
         attr_accessor :minutes, :topnum
