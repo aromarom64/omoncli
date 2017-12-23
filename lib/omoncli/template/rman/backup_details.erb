@@ -40,6 +40,7 @@ col operation for a10 tru
 select command_id,operation,status,start_time,end_time,input_bytes,output_bytes,object_type
 from v$rman_status 
 where status != 'COMPLETED' and status != 'RUNNING' and start_time > (SYSDATE - :vDay)
+order by start_time desc
 /
 
 <%= render 'template/footer.erb' %>
