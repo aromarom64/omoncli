@@ -35,6 +35,27 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "sql_plan_diff_outl", "SQL Plan Outline sections diff"
+    long_desc <<-LONGDESC
+      SQL Plan Outline sections diff
+      omoncli cbo sql_plan_diff_outl --sql_id1="" --plan_hash_value1="" --sql_id2="" --plan_hash_value2=""
+    LONGDESC
+    option :sql_id1, :required => true, :type => :string
+    option :plan_hash_value1, :required => true, :type => :string
+    option :sql_id2, :required => true, :type => :string
+    option :plan_hash_value2, :required => true, :type => :string
+    option :query_block_name, :type => :string, :lazy_default => ''
+    def sql_plan_diff_outl 
+      Sqlpage.class_eval do
+        attr_accessor :sql_id1, :plan_hash_value1, :sql_id2, :plan_hash_value2, :query_block_name
+      end
+      r = Sqlpage.new('template/cbo/sql_plan_diff_outl.erb')
+      r.sql_id1, r.plan_hash_value1, r.sql_id2, r.plan_hash_value2, r.query_block_name = 
+        options[:sql_id1], options[:plan_hash_value1], options[:sql_id2], options[:plan_hash_value2], options[:query_block_name]
+      vim(sqlplus(r))
+    end
+
+
 
   end
 

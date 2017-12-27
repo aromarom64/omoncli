@@ -1,0 +1,91 @@
+<%= render 'template/header.erb' %>
+
+
+define sql_id1='<%= @sql_id1%>'
+define plan_hash_value1='<%= @plan_hash_value1%>'
+define sql_id2='<%= @sql_id2%>'
+define plan_hash_value2='<%= @plan_hash_value2%>'
+define query_block_name='<%= @query_block_name%>'
+
+set trim on trims on linesize 300 pagesize 4000 timing on verify off
+col sql_handle for a30
+col plan_name  for a30
+
+spool <%= @filenamespool %> append
+prompt Sql_handle: <%= @sql_handle%>
+
+
+pro --------------------------------
+
+pro SQL Plan "Outline" sections diff
+
+pro --------------------------------
+
+with
+plh1 as (select substr(extractvalue(value(d), '/hint'), 1, 512) as phv_&&plan_hash_value1
+  from xmltable('/*/outline_data/hint' passing
+                (select xmltype(other_xml) as xmlval
+                   from dba_hist_sql_plan
+                  where sql_id = '&&sql_id1'
+                    and plan_hash_value = nvl('&&plan_hash_value1',0)
+                    and other_xml is not null
+                    and not exists (select 1 from gv$sql_plan where sql_id = '&&sql_id1' and plan_hash_value = nvl('&&plan_hash_value1',0) and other_xml is not null))) d
+         union all
+         select substr(extractvalue(value(d), '/hint'), 1, 512)
+  from xmltable('/*/outline_data/hint' passing
+                (select xmltype(other_xml) as xmlval
+                   from gv$sql_plan
+                  where sql_id = '&&sql_id1'
+                    and plan_hash_value = nvl('&&plan_hash_value1',0)
+                    and other_xml is not null
+                    and rownum <= 1
+--                    and child_number = (select min(child_number) from v$sql_plan where sql_id = '&&sql_id1' and plan_hash_value = nvl('&&plan_hash_value1',0)))) d),
+--                    and (inst_id, child_number) in (select inst_id, child_number from gv$sql_plan where sql_id = '&&sql_id1' and plan_hash_value = nvl('&&plan_hash_value1', 0) and rownum <= 1)
+        )) d),
+plh2 as (select substr(extractvalue(value(d), '/hint'), 1, 512) as phv_&&plan_hash_value2
+  from xmltable('/*/outline_data/hint' passing
+                (select xmltype(other_xml) as xmlval
+                   from dba_hist_sql_plan
+                  where sql_id = '&&sql_id2'
+                    and plan_hash_value = nvl('&&plan_hash_value2',0)
+                    and other_xml is not null
+                    and not exists (select 1 from gv$sql_plan where sql_id = '&&sql_id2' and plan_hash_value = nvl('&&plan_hash_value2',0) and other_xml is not null))) d
+         union all
+         select substr(extractvalue(value(d), '/hint'), 1, 512)
+  from xmltable('/*/outline_data/hint' passing
+                (select xmltype(other_xml) as xmlval
+                   from gv$sql_plan
+                  where sql_id = '&&sql_id2'
+                    and plan_hash_value = nvl('&&plan_hash_value2',0)
+                    and other_xml is not null
+                    and rownum <= 1
+--                    and child_number = (select min(child_number) from v$sql_plan where sql_id = '&&sql_id2' and plan_hash_value = nvl('&&plan_hash_value2',0)))) d)
+--                    and (inst_id, child_number) in (select inst_id, child_number from gv$sql_plan where sql_id = '&&sql_id2' and plan_hash_value = nvl('&&plan_hash_value2', 0) and rownum <= 1)
+        )) d)
+(select plh1.phv_&&plan_hash_value1 from plh1 -- full join plh2 on plh1.phv_&&plan_hash_value1 = plh2.phv_&&plan_hash_value2
+  where --not (plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'INDEX%'        or       -- may be useful to exclude a lot of non-principal hints
+              --     plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'NLJ_BATCHING%' or -- --//--
+              --     plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'OUTLINE%')        -- --//--
+              --and  
+                     plh1.phv_&&plan_hash_value1 like '%' || '&&query_block_name' || '%'
+ minus
+ select plh1.phv_&&plan_hash_value1 from plh1 join plh2 on plh1.phv_&&plan_hash_value1 = plh2.phv_&&plan_hash_value2)
+union all
+select '----------------------------------------------------------------------------------------------------' from dual
+union all
+select 'PHV_&&plan_hash_value2' from dual
+union all
+select '----------------------------------------------------------------------------------------------------' from dual
+union all
+(select plh2.phv_&&plan_hash_value2 from plh2
+  where --not (plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'INDEX%'        or       -- may be useful to exclude a lot of non-principal hints
+              --     plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'NLJ_BATCHING%' or -- --//--
+              --     plh1.phv_&&plan_hash_value1 || plh2.phv_&&plan_hash_value2 like 'OUTLINE%')        -- --//--
+              --and  
+                     plh2.phv_&&plan_hash_value2 like '%' || '&&query_block_name' || '%'
+ minus
+ select plh2.phv_&&plan_hash_value2 from plh1 join plh2 on plh1.phv_&&plan_hash_value1 = plh2.phv_&&plan_hash_value2)
+/
+
+
+<%= render 'template/footer.erb' %>
