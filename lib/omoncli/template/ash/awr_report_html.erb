@@ -20,7 +20,8 @@ begin
   :latest := '<%= @edate %>';
   select min(snap_id), max(snap_id) into :vbid, :veid
   from dba_hist_snapshot 
-  where begin_interval_time between to_date(:oldest, '&ash_time_format') and to_date(:latest, '&ash_time_format');
+  where begin_interval_time between to_date(:oldest, '&ash_time_format') and to_date(:latest, '&ash_time_format')
+  and instance_number = :instnum;
   dbms_output.put_line('Begin snap_id: ' || :vbid);
   dbms_output.put_line('End snap_id: ' || :veid);
   dbms_output.put_line('Begin date: ' || :oldest);
