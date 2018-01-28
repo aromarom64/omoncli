@@ -1,0 +1,18 @@
+<%= render 'template/header.erb' %>
+
+column occupant_name format a30
+column schema_name format a20
+
+set echo off feedback off heading on timi on pages 1000 lines 200 VERIFY OFF
+
+spool <%= @filenamespool %> append
+
+SELECT occupant_name,
+       schema_name,
+       space_usage_kbytes,
+       occupant_desc
+FROM   v$sysaux_occupants
+ORDER BY space_usage_kbytes desc
+/
+
+<%= render 'template/footer.erb' %>
