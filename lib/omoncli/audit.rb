@@ -67,6 +67,15 @@ module Omoncli
       vim(sqlplus(r))
     end
 
+    desc "patch_status", "patch_status"
+    long_desc <<-LONGDESC
+      omoncli audit patch_status"
+    LONGDESC
+    def patch_status
+      r = Sqlpage.new('template/audit/patch_status.erb')
+      vim(sqlplus(r))
+    end
+
   end
 
 end

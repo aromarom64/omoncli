@@ -59,9 +59,10 @@ module Omoncli
     def initialize
       @tns = []
       File.foreach(TNSNAMES) do |line|
-        if line =~ /^ *[a-zA-Z]/
-          @tns << line.sub(/\s*=/,"").chop.downcase
-        end
+          md = /^\s*([a-zA-Z0-9_]+)/.match(line)
+          if md then
+            @tns << md[1].downcase
+          end
       end
     end
 
