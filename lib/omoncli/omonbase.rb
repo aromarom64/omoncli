@@ -156,16 +156,14 @@ module Omoncli
     private
 
     def _save_to_file(content)
-      result = filename = '/tmp/' + Dir::Tmpname::make_tmpname(['file', '.sql'],false)
-      file = File.new(filename, "w+")
+      f = Tempfile.new(['file', '.sql'])
       begin
-        file.write(content)
+        f.write(content)
       rescue
-        file.close
-        raise
+        f.close
       end
-      file.close
-      result
+      f.close
+      f.path
     end
 
     def _sqlplus(content)

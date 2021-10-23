@@ -13,13 +13,14 @@ spec = Gem::Specification.new do |s|
   s.files += Dir.glob('lib/**/*.rb')
   s.files += Dir.glob('lib/**/*.erb')
   s.require_paths << 'lib'
-  s.has_rdoc = true
+#  s.has_rdoc = true
   s.extra_rdoc_files = ['README.rdoc','omoncli.rdoc']
   s.rdoc_options << '--title' << 'omoncli' << '--main' << 'README.rdoc'
   s.bindir = 'bin'
   s.executables << 'omoncli'
   s.add_development_dependency('rake')
-  s.add_development_dependency('rdoc')
+#  s.add_development_dependency('rdoc')
   s.add_runtime_dependency('thor')
   s.add_runtime_dependency('highline')
+#  s.add_runtime_dependency('tempfile')
 end
